@@ -1,17 +1,19 @@
 import type { CheerioAPI } from 'cheerio';
 import type { NarrativeSection } from '../model/types.js';
+import { cleanText } from '../normalize/values.js';
+import { extractCitationIds } from './references.js';
 
-const KNOWN = ['Uses', 'Ecology', 'Propagation', 'Cultivation', 'Crops', 'Problems, pests & diseases', 'Associations & Interactions', 'Polycultures & Guilds', 'Descendants', 'References'];
+const KNOWN = new Set(['Uses','Ecology','Propagation','Cultivation','Crops','Problems, pests & diseases','Associations & Interactions','Polycultures & Guilds','Descendants']);
 export function extractNarrative($: CheerioAPI, sourcePath: string): NarrativeSection[] {
   const sections: NarrativeSection[] = [];
-  $('h2, h3').each((_, h) => {
-    const title = $(h).text().replace(/\s+/g, ' ').trim();
-    if (!title || !KNOWN.some(k => k.toLowerCase() === title.toLowerCase())) return;
-    const container = $(h).parent();
-    const paragraphs = container.find('p').map((_, p) => $(p).text().replace(/\\s+/g, ' ').trim()).get().filter(Boolean);
-    const lists = container.find('ul, ol').map((_, ul) => $(ul).find('li').map((_, li) => $(li).text().replace(/\s+/g, ' ').trim()).get()).get().filter(x => x.length);
-    const links = container.find('a[href]').map((_, a) => ({ href: $(a).attr('href') || '', label: $(a).text().trim(), linkType: 'unknown' as const })).get();
-    sections.push({ id: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), title, paragraphs, lists, links, references: [], sourceLocation: { page: sourcePath, section: title } });
+  $('#mw-content-text > .article-section').each((_, sectionEl) => {
+    const heading = $(sectionEl).children('h2').find('.mw-headline').first();
+    const title = cleanText(heading.text());
+    if (!title || !KNOWN.has(title)) return;
+    const links = $(sectionEl).find('a[href]').map((_, a) => ({ href: $(a).attr('href') || '', label: cleanText($(a).text()), linkType: 'unknown' as const, redLink: $(a).hasClass('new') })).get();
+    const paragraphs = $(sectionEl).find('p, .pfaf-notes').map((_, p) => cleanText($(p).text())).get().filter(Boolean);
+    const lists = $(sectionEl).find('ul, ol').map((_, list) => $(list).children('li').map((_, li) => cleanText($(li).text())).get().filter(Boolean)).get().filter(x => x.length);
+    sections.push({ id: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), title, paragraphs, lists, links, references: extractCitationIds($, sectionEl), sourceLocation: { page: sourcePath, section: title } });
   });
   return sections;
 }

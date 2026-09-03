@@ -2,5 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/practicalplants/concept.schema.json",
   "type": "object",
-  "description": "Initial V1 schema placeholder refined from corpus observations."
+  "required": ["members"],
+  "properties": { "description": { "type": "string" }, "members": { "type": "array", "items": { "type": "string" } } },
+  "additionalProperties": false
 }

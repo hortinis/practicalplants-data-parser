@@ -1,20 +1,34 @@
 import type { CheerioAPI } from 'cheerio';
-import type { UseRecord, ToxicityRecord } from '../model/types.js';
+import type { ToxicityRecord, UseRecord } from '../model/types.js';
+import { cleanText } from '../normalize/values.js';
+import { extractCitationIds } from './references.js';
+
+const categories = ['edible', 'material', 'medicinal'] as const;
 
 export function extractUses($: CheerioAPI, sourcePath: string): UseRecord[] {
   const records: UseRecord[] = [];
-  for (const category of ['edible', 'material', 'medicinal'] as const) {
-    const section = $('h2,h3').filter((_, h) => $(h).text().trim().toLowerCase() === `${category} uses`).first().parent();
-    section.find('li').each((_, li) => records.push({ category, text: $(li).text().replace(/\s+/g, ' ').trim(), references: [], sourceLocation: { page: sourcePath, section: 'Uses', field: `${category} uses` } }));
+  for (const category of categories) {
+    const section = $(`#plant-${category}-uses`).first();
+    if (!section.length) continue;
+    section.find(':scope > .plant-uses').each((_, group) => {
+      const plantPart = cleanText($(group).children('h4').first().text()) || undefined;
+      $(group).find(':scope > .plant-use-list > .plant-use-list-item').each((_, item) => {
+        const links = $(item).find('a');
+        const use = cleanText(links.first().text()) || cleanText($(item).text()) || undefined;
+        records.push({ category, plantPart, use, text: cleanText($(item).text()), references: extractCitationIds($, item), sourceLocation: { page: sourcePath, section: 'Uses', field: `${category} uses` } });
+      });
+    });
   }
   return records;
 }
 
 export function extractToxicity($: CheerioAPI, sourcePath: string): ToxicityRecord[] {
-  const out: ToxicityRecord[] = [];
-  $('h2,h3').filter((_, h) => /uses/i.test($(h).text())).first().parent().find('table').each((_, table) => {
-    const values = $(table).find('tr').map((_, tr) => $(tr).find('th,td').map((_, c) => $(c).text().replace(/\s+/g, ' ').trim()).get()).get();
-    for (const row of values) if (row.length >= 2 && /parts|compound|severity/i.test(row[0])) out.push({ plantParts: /parts/i.test(row[0]) ? row.slice(1) : [], compound: /compound/i.test(row[0]) ? row.slice(1).join(' ') : undefined, severity: /severity/i.test(row[0]) ? row.slice(1).join(' ') : undefined, references: [], sourceLocation: { page: sourcePath, section: 'Uses', field: 'Toxicity' } });
-  });
-  return out;
+  return $('.toxicpart').map((_, el) => ({
+    plantParts: $(el).find('h4 a').map((_, a) => cleanText($(a).text())).get().filter(Boolean),
+    compound: cleanText($(el).find('.toxicpart-compounds').first().clone().children().remove().end().text()) || undefined,
+    severity: cleanText($(el).find('.toxicpart-toxicity').last().text()) || undefined,
+    description: cleanText($(el).clone().find('h4, .toxic-compound, sup.reference, .smw-highlighter').remove().end().text()) || undefined,
+    references: extractCitationIds($, el),
+    sourceLocation: { page: sourcePath, section: 'Uses', field: 'Toxic parts' }
+  })).get();
 }

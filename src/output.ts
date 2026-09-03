@@ -13,7 +13,7 @@ function stable(value: unknown): string { return JSON.stringify(sortKeys(value),
 export async function writeOutput(outDir: string, pages: PPPage[], errors: ParseError[], manifest: unknown): Promise<void> {
   for (const page of pages) {
     const dir = join(outDir, 'pages', page.identity.pageType); await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, `${page.identity.pageId.replace(/\//g,'__')}.json`), stable(page), 'utf8');
+    await writeFile(join(dir, `${page.identity.pageId.replace(/\\//g,'__')}.json`), stable(page), 'utf8');
   }
   await mkdir(outDir, { recursive: true });
   await writeFile(join(outDir,'errors.json'), stable(errors), 'utf8');

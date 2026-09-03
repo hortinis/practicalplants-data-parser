@@ -2,5 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/practicalplants/reference.schema.json",
   "type": "object",
-  "description": "Initial V1 schema placeholder refined from corpus observations."
+  "required": ["id", "rawText", "urls"],
+  "properties": { "id": { "type": "string" }, "rawText": { "type": "string" }, "author": { "type": "string" }, "title": { "type": "string" }, "publisher": { "type": "string" }, "date": { "type": "string" }, "isbn": { "type": "string" }, "urls": { "type": "array", "items": { "type": "string" } } },
+  "additionalProperties": false
 }

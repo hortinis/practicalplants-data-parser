@@ -4,17 +4,35 @@
   "type": "object",
   "required": ["identity", "source", "references", "links"],
   "properties": {
-    "identity": { "type": "object", "required": ["pageId", "title", "pageType", "sourcePath"], "properties": { "pageId": {"type":"string"}, "title":{"type":"string"}, "pageType":{"enum":["plant","concept","index","unknown"]}, "sourcePath":{"type":"string"}}, "additionalProperties": true },
-    "source": { "type":"object", "required":["repository"], "properties":{"repository":{"type":"string"},"commit":{"type":"string"}}, "additionalProperties": false },
-    "references": { "type":"array", "items":{"type":"object","required":["id","rawText","urls"],"properties":{"id":{"type":"string"},"rawText":{"type":"string"},"author":{"type":"string"},"title":{"type":"string"},"publisher":{"type":"string"},"date":{"type":"string"},"isbn":{"type":"string"},"urls":{"type":"array","items":{"type":"string"}}},"additionalProperties":true}},
-    "links": { "type":"array", "items":{"$ref":"#/$defs/link"} }
+    "identity": { "$ref": "#/$defs/identity" },
+    "source": { "$ref": "#/$defs/source" },
+    "references": { "type": "array", "items": { "$ref": "reference.schema.json" } },
+    "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
+    "plant": { "$ref": "plant.schema.json" },
+    "taxonomy": { "type": "object" },
+    "fullData": { "type": "object", "additionalProperties": { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/fieldValue" } } } },
+    "narrative": { "type": "array", "items": { "$ref": "#/$defs/narrative" } },
+    "uses": { "type": "array", "items": { "$ref": "#/$defs/use" } },
+    "toxicity": { "type": "array", "items": { "$ref": "#/$defs/toxicity" } },
+    "concept": { "$ref": "concept.schema.json" },
+    "index": { "type": "object" },
+    "unknown": { "type": "object" }
   },
   "allOf": [
-    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"plant"}}}}},"then":{"required":["plant","taxonomy","fullData","narrative","uses","toxicity"]}},
-    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"concept"}}}}},"then":{"required":["concept"]}},
-    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"index"}}}}},"then":{"required":["index"]}},
-    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"unknown"}}}}},"then":{"required":["unknown"]}}
+    { "if": { "properties": { "identity": { "properties": { "pageType": { "const": "plant" } } } } }, "then": { "required": ["plant", "taxonomy", "fullData", "narrative", "uses", "toxicity"] } },
+    { "if": { "properties": { "identity": { "properties": { "pageType": { "const": "concept" } } } } }, "then": { "required": ["concept"] } },
+    { "if": { "properties": { "identity": { "properties": { "pageType": { "const": "index" } } } } }, "then": { "required": ["index"] } },
+    { "if": { "properties": { "identity": { "properties": { "pageType": { "const": "unknown" } } } } }, "then": { "required": ["unknown"] } }
   ],
-  "$defs": { "link": {"type":"object","required":["href","label","linkType"],"properties":{"href":{"type":"string"},"label":{"type":"string"},"targetPageId":{"type":"string"},"linkType":{"enum":["internal","external","unknown"]},"resolved":{"type":"boolean"}},"additionalProperties":false} },
+  "$defs": {
+    "identity": { "type": "object", "required": ["pageId", "title", "pageType", "sourcePath"], "properties": { "pageId": { "type": "string" }, "title": { "type": "string" }, "pageType": { "enum": ["plant", "concept", "index", "unknown"] }, "sourcePath": { "type": "string" } }, "additionalProperties": false },
+    "source": { "type": "object", "required": ["repository"], "properties": { "repository": { "type": "string" }, "commit": { "type": "string" } }, "additionalProperties": false },
+    "link": { "type": "object", "required": ["href", "label", "linkType"], "properties": { "href": { "type": "string" }, "label": { "type": "string" }, "targetPageId": { "type": "string" }, "linkType": { "enum": ["internal", "external", "unknown"] }, "resolved": { "type": "boolean" }, "redLink": { "type": "boolean" } }, "additionalProperties": false },
+    "fieldValue": { "type": "object", "required": ["rawValue", "status", "links"], "properties": { "rawValue": { "type": "string" }, "normalizedValue": {}, "status": { "enum": ["known", "unknown", "none_listed", "empty"] }, "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }, "sourceLocation": { "$ref": "#/$defs/sourceLocation" } }, "additionalProperties": false },
+    "sourceLocation": { "type": "object", "required": ["page"], "properties": { "page": { "type": "string" }, "section": { "type": "string" }, "field": { "type": "string" } }, "additionalProperties": false },
+    "narrative": { "type": "object", "required": ["id", "title", "paragraphs", "lists", "links", "references", "sourceLocation"], "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "paragraphs": { "type": "array", "items": { "type": "string" } }, "lists": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } }, "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }, "references": { "type": "array", "items": { "type": "string" } }, "sourceLocation": { "$ref": "#/$defs/sourceLocation" } }, "additionalProperties": false },
+    "use": { "type": "object", "required": ["category", "references"], "properties": { "category": { "enum": ["edible", "material", "medicinal"] }, "plantPart": { "type": "string" }, "use": { "type": "string" }, "text": { "type": "string" }, "references": { "type": "array", "items": { "type": "string" } }, "sourceLocation": { "$ref": "#/$defs/sourceLocation" } }, "additionalProperties": false },
+    "toxicity": { "type": "object", "required": ["plantParts", "references"], "properties": { "plantParts": { "type": "array", "items": { "type": "string" } }, "compound": { "type": "string" }, "severity": { "type": "string" }, "description": { "type": "string" }, "references": { "type": "array", "items": { "type": "string" } }, "sourceLocation": { "$ref": "#/$defs/sourceLocation" } }, "additionalProperties": false }
+  },
   "additionalProperties": true
 }
