@@ -5,7 +5,7 @@ export type LinkType = 'internal' | 'external' | 'unknown';
 export interface SourceLocation { page: string; section?: string; field?: string; }
 export interface LinkRecord { href: string; label: string; targetPageId?: string; linkType: LinkType; resolved?: boolean; redLink?: boolean; }
 export interface FieldValue { rawValue: string; normalizedValue?: unknown; status: ValueStatus; links: LinkRecord[]; sourceLocation?: SourceLocation; }
-export interface UseRecord { category: 'edible' | 'material' | 'medicinal'; plantPart?: string; use?: string; text?: string; references: string[]; sourceLocation?: SourceLocation; }
+export interface UseRecord { category: 'edible' | 'material' | 'medicinal'; plantPart?: string; use?: string; text?: string; links?: LinkRecord[]; references: string[]; sourceLocation?: SourceLocation; }
 export interface ToxicityRecord { plantParts: string[]; compound?: string; severity?: string; description?: string; references: string[]; sourceLocation?: SourceLocation; }
 export interface NarrativeSection { id: string; title: string; paragraphs: string[]; lists: string[][]; links: LinkRecord[]; references: string[]; sourceLocation: SourceLocation; }
 export interface ReferenceRecord { id: string; rawText: string; author?: string; title?: string; publisher?: string; date?: string; isbn?: string; urls: string[]; }

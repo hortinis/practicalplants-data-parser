@@ -2,15 +2,16 @@ import type { CheerioAPI } from 'cheerio';
 import type { NarrativeSection } from '../model/types.js';
 import { cleanText } from '../normalize/values.js';
 import { extractCitationIds } from './references.js';
+import { extractLinks } from './links.js';
 
 const KNOWN = new Set(['Uses','Ecology','Propagation','Cultivation','Crops','Problems, pests & diseases','Associations & Interactions','Polycultures & Guilds','Descendants']);
-export function extractNarrative($: CheerioAPI, sourcePath: string): NarrativeSection[] {
+export function extractNarrative($: CheerioAPI, sourcePath: string, pageIds: Set<string> = new Set()): NarrativeSection[] {
   const sections: NarrativeSection[] = [];
   $('#mw-content-text > .article-section').each((_, sectionEl) => {
     const heading = $(sectionEl).children('h2').find('.mw-headline').first();
     const title = cleanText(heading.text());
     if (!title || !KNOWN.has(title)) return;
-    const links = $(sectionEl).find('a[href]').map((_, a) => ({ href: $(a).attr('href') || '', label: cleanText($(a).text()), linkType: 'unknown' as const, redLink: $(a).hasClass('new') })).get();
+    const links = extractLinks($, sourcePath, pageIds, $(sectionEl));
     const paragraphs = $(sectionEl).find('p, .pfaf-notes').map((_, p) => cleanText($(p).text())).get().filter(Boolean);
     const lists: string[][] = [];
     $(sectionEl).find('ul, ol').each((_, list) => {

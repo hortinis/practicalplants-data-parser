@@ -28,10 +28,10 @@ export function parseConcept($: CheerioAPI, pageId: string, sourcePath: string, 
 export function parseIndex($: CheerioAPI, pageId: string, sourcePath: string, repository: string, commit: string | undefined, pageIds: Set<string>): IndexPage {
   const title = cleanText($('#article-title').first().text()) || pageId;
   const body = $('#mw-content-text').first();
-  const members = body.find('.category-plant-item a[href]')
+  const members = body.find('li a[href]').not('.printfooter a, #catlinks a')
     .map((_, a) => normalizeLinkTarget($(a).attr('href') || '', sourcePath))
     .get()
-    .filter((x): x is string => !!x && pageIds.has(x));
+    .filter((x): x is string => !!x && x !== pageId && pageIds.has(x));
   return {
     identity: pageIdentity(pageId, title, 'index', sourcePath),
     source: { repository, commit },

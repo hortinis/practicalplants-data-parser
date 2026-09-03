@@ -17,5 +17,5 @@ export function parsePlant($: CheerioAPI, pageId: string, sourcePath: string, re
   const image = imageEl.length ? { filename: imageEl.attr('alt') || imageEl.attr('src')?.split('/').pop(), altText: imageEl.attr('alt'), sourceLink: imageLink } : undefined;
   const taxonomy = { binomialName: scientificName, genus: cleanText($('#article-summary .genus').first().text()) || undefined, family: cleanText($('#article-summary .family').first().text()) || undefined };
   const references = extractReferences($);
-  return { identity: { pageId, title, pageType: 'plant', sourcePath }, source: { repository, commit }, plant: { scientificName, commonNames, summary, image }, taxonomy, fullData: extractFullData($, sourcePath), narrative: extractNarrative($, sourcePath), uses: extractUses($, sourcePath), toxicity: extractToxicity($, sourcePath), references, links: extractLinks($, sourcePath, pageIds) };
+  return { identity: { pageId, title, pageType: 'plant', sourcePath }, source: { repository, commit }, plant: { scientificName, commonNames, summary, image }, taxonomy, fullData: extractFullData($, sourcePath, pageIds), narrative: extractNarrative($, sourcePath, pageIds), uses: extractUses($, sourcePath, pageIds), toxicity: extractToxicity($, sourcePath), references, links: extractLinks($, sourcePath, pageIds) };
 }

@@ -58,6 +58,21 @@ The parser still treats the full corpus as authoritative: additional structures 
 - JSON Schema is the schema source of truth.
 - No network access is required by the parser.
 
+## Full-corpus validation findings
+
+A full recovered-archive run completed with 11,019 parsed pages and 0 parser errors. The run exposed several corpus-wide fidelity issues that are now addressed in the parser:
+
+- MediaWiki `w/index.php?title=...` links, including `redlink=1` edit URLs, are parsed as wiki links and retain the target page identity and red-link state.
+- The recovered site's root links (`../../wiki//index.html` and `/wiki/`) resolve to the root page identifier `.` rather than the synthetic page `index`.
+- Index/list detection is based on collection headings plus actual list links, avoiding false positives for descriptive pages such as `Acid_loving`.
+- Index members are collected from list links and filtered against the scanned page set, so structures such as common-name indexes are supported in addition to genus indexes.
+- Repeated Full Data field labels are accumulated rather than overwritten. This preserves duplicate source fields such as repeated `Cultivation` entries.
+- Narrative and Full Data links use the same link parser, preserving wiki target identity and red-link information. Use records likewise retain their links.
+
+The source archive contains generated MediaWiki list/index pages in addition to plant pages. For example, `Abutilon` has a `Plants with the common name Abutilon` collection and three plant entries, while `Abies` uses `Plants in the Abies genus`. These are both index structures. Descriptive pages without an actual collection remain eligible for `unknown`.
+
+The parser remains offline and does not use external taxonomy or biological enrichment.
+
 ## Limitations still requiring corpus validation
 
 The six representative pages are enough to replace the initial selector assumptions, but a full archive run is still required to measure variation in:

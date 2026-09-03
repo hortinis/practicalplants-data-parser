@@ -2,10 +2,11 @@ import type { CheerioAPI } from 'cheerio';
 import type { ToxicityRecord, UseRecord } from '../model/types.js';
 import { cleanText } from '../normalize/values.js';
 import { extractCitationIds } from './references.js';
+import { extractLinks } from './links.js';
 
 const categories = ['edible', 'material', 'medicinal'] as const;
 
-export function extractUses($: CheerioAPI, sourcePath: string): UseRecord[] {
+export function extractUses($: CheerioAPI, sourcePath: string, pageIds: Set<string> = new Set()): UseRecord[] {
   const records: UseRecord[] = [];
   for (const category of categories) {
     const section = $(`#plant-${category}-uses`).first();
@@ -15,7 +16,7 @@ export function extractUses($: CheerioAPI, sourcePath: string): UseRecord[] {
       $(group).find(':scope > .plant-use-list > .plant-use-list-item').each((_, item) => {
         const links = $(item).find('a');
         const use = cleanText(links.first().text()) || cleanText($(item).text()) || undefined;
-        records.push({ category, plantPart, use, text: cleanText($(item).text()), references: extractCitationIds($, item), sourceLocation: { page: sourcePath, section: 'Uses', field: `${category} uses` } });
+        records.push({ category, plantPart, use, text: cleanText($(item).text()), links: extractLinks($, sourcePath, pageIds, $(item)), references: extractCitationIds($, item), sourceLocation: { page: sourcePath, section: 'Uses', field: `${category} uses` } });
       });
     });
   }

@@ -33,7 +33,7 @@ describe('observed Practical Plants structures', () => {
     expect(page.taxonomy.family).toBe('Solanaceae');
   });
   it('extracts Full Data infobox hierarchy and missing states', () => {
-    const result = extractFullData($, 'wiki/Solanum_lycopersicum/index.html');
+    const result = extractFullData($, 'wiki/Solanum_lycopersicum/index.html', new Set(['Food','PH_scale']));
     expect(result.Environment['Hardiness Zone'][0].rawValue).toBe('9');
     expect(result.Environment['Heat Zone'][0].status).toBe('unknown');
     expect(result.Environment['Environmental Tolerances'][0].status).toBe('empty');
@@ -71,5 +71,62 @@ describe('non-plant observed structures', () => {
     const page = parseConcept($, 'Canopy', 'wiki/Canopy/index.html', 'Practical Plants recovered archive', undefined, new Set(['Canopy', 'Abies_amabilis']));
     expect(page.identity.pageType).toBe('concept');
     expect(page.concept.members).toEqual(['Abies_amabilis']);
+  });
+});
+
+
+describe('corpus-derived link and index edge cases', () => {
+  it('extracts MediaWiki red-link targets from edit URLs', async () => {
+    const { extractLinks, normalizeLinkTarget } = await import('../src/parser/links.js');
+    const $ = load('<div id="mw-content-text"><a class="new" href="/w/index.php?title=PH_scale&amp;action=edit&amp;redlink=1">PH values</a></div>');
+    const links = extractLinks($, 'wiki/Acid_loving/index.html', new Set(['PH_scale']));
+    expect(links[0]).toMatchObject({
+      href: '/w/index.php?title=PH_scale&action=edit&redlink=1',
+      label: 'PH values',
+      targetPageId: 'PH_scale',
+      linkType: 'internal',
+      resolved: true,
+      redLink: true
+    });
+    expect(normalizeLinkTarget('../../wiki//index.html', 'wiki/Abies/index.html')).toBe('.');
+    expect(normalizeLinkTarget('/wiki/', 'wiki/Abies/index.html')).toBe('.');
+  });
+
+  it('classifies common-name collection pages as indexes', () => {
+    const $ = load(`
+      <div id="page-header"><h1 id="article-title">Abutilon</h1></div>
+      <div id="mw-content-text">
+        <div id="article-summary">is a common name used for a number of distinct species.</div>
+        <h2><span class="mw-headline">Plants with the <a href="../../wiki/Common_name/index.html">common name</a> Abutilon</span></h2>
+        <div><ul><li><a href="../../wiki/Abutilon_megapotamicum/index.html">Abutilon megapotamicum</a></li></ul></div>
+      </div>`);
+    expect(classifyPage($)).toBe('index');
+  });
+
+  it('preserves repeated Full Data fields instead of overwriting them', () => {
+    const $ = load(`
+      <div id="plant-datatable">
+        <div class="infobox-section">
+          <div class="infobox-title">Environment</div>
+          <div class="infobox-content">
+            <div class="infobox-subsection"><div class="infobox-title">Cultivation</div><div class="infobox-content">First</div></div>
+            <div class="infobox-subsection"><div class="infobox-title">Cultivation</div><div class="infobox-content">Second</div></div>
+          </div>
+        </div>
+      </div>`);
+    const result = extractFullData($, 'wiki/Test/index.html');
+    expect(result.Environment.Cultivation.map(v => v.rawValue)).toEqual(['First', 'Second']);
+  });
+
+  it('preserves links inside use records', async () => {
+    const { extractUses } = await import('../src/parser/uses.js');
+    const $ = load(`
+      <div id="plant-edible-uses">
+        <div class="plant-uses"><h4>Fruit</h4>
+          <div class="plant-use-list"><div class="plant-use-list-item"><a href="../../wiki/Food/index.html">Fresh</a></div></div>
+        </div>
+      </div>`);
+    const use = extractUses($, 'wiki/Test/index.html', new Set(['Food']))[0];
+    expect(use.links?.[0]).toMatchObject({ targetPageId: 'Food', linkType: 'internal' });
   });
 });

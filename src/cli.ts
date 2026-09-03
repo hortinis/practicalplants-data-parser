@@ -20,5 +20,5 @@ for (const candidate of scan.pages) {
 }
 pages.sort((a,b) => a.identity.pageId.localeCompare(b.identity.pageId)); errors.sort((a,b) => a.sourcePath.localeCompare(b.sourcePath));
 const counts = pages.reduce<Record<string,number>>((acc,p) => { acc[p.identity.pageType]=(acc[p.identity.pageType]||0)+1; return acc; },{});
-await writeOutput(output,pages,errors,{ parserVersion:'0.1.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.1.0', pageCounts:counts, pageCount:pages.length, errorCount:errors.length });
+await writeOutput(output,pages,errors,{ parserVersion:'0.3.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.3.0', pageCounts:counts, pageCount:pages.length, errorCount:errors.length });
 console.log(`Parsed ${pages.length} pages with ${errors.length} errors.`);
