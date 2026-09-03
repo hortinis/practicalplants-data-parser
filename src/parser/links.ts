@@ -2,13 +2,29 @@ import type { CheerioAPI } from 'cheerio';
 import type { LinkRecord } from '../model/types.js';
 import { normalize } from 'node:path';
 
-function targetFromHref(href: string): string | undefined {
-  const clean = href.split('#')[0].split('?')[0];
-  if (!clean) return undefined;
-  let target = clean.replace(/^https?:\/\/[^/]+/i, '').replace(/^\/?wiki\//, '').replace(/^\.?\/?/, '');
-  target = target.replace(/\/index\.html$/i, '').replace(/\.html$/i, '');
-  target = normalize(target).replace(/\\/g, '/').replace(/^\.\//, '');
-  return target || undefined;
+export function normalizeLinkTarget(href: string, sourcePath?: string): string | undefined {
+  const withoutHash = href.split('#')[0];
+  if (!withoutHash) return undefined;
+
+  const absolute = withoutHash.replace(/^https?:\/\/[^/]+/i, '');
+  const query = absolute.includes('?') ? absolute.slice(absolute.indexOf('?') + 1) : '';
+  const pathPart = absolute.split('?')[0];
+  let targetPath = pathPart;
+
+  if (/^\/w\/index\.php$/i.test(pathPart)) {
+    const params = new URLSearchParams(query);
+    const title = params.get('title');
+    return title ? title.replace(/\/index\.html$/i, '').replace(/\.html$/i, '') : undefined;
+  }
+
+  if (sourcePath && !pathPart.startsWith('/wiki/') && !pathPart.startsWith('wiki/')) {
+    const sourceDir = sourcePath.split('/').slice(0, -1).join('/');
+    targetPath = normalize(`${sourceDir}/${pathPart}`).replace(/\\/g, '/');
+  }
+
+  targetPath = targetPath.replace(/^\/?wiki\//, '').replace(/\/index\.html$/i, '').replace(/\.html$/i, '');
+  targetPath = normalize(targetPath).replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\//, '');
+  return targetPath || undefined;
 }
 
 export function extractLinks($: CheerioAPI, _sourcePath: string, pageIds: Set<string>): LinkRecord[] {
@@ -20,7 +36,7 @@ export function extractLinks($: CheerioAPI, _sourcePath: string, pageIds: Set<st
     const redLink = $(el).hasClass('new') || /redlink=1/.test(href);
     const internal = href.startsWith('./') || href.startsWith('../') || href.startsWith('/wiki/') || href.startsWith('wiki/') || /^https?:\/\/practicalplants\.org\/(?:wiki|w\/index\.php)/i.test(href);
     if (!internal) { result.push({ href, label, linkType: 'external' }); return; }
-    const targetPageId = targetFromHref(href);
+    const targetPageId = normalizeLinkTarget(href, _sourcePath);
     result.push({ href, label, targetPageId, linkType: 'internal', resolved: !!targetPageId && pageIds.has(targetPageId), redLink });
   });
   return result;

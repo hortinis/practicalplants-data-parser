@@ -1,6 +1,7 @@
 import type { CheerioAPI } from 'cheerio';
 import type { ConceptPage, IndexPage, UnknownPage } from '../model/types.js';
 import { cleanText } from '../normalize/values.js';
+import { normalizeLinkTarget } from './links.js';
 import { extractLinks } from './links.js';
 import { extractReferences } from './references.js';
 
@@ -12,10 +13,9 @@ export function parseConcept($: CheerioAPI, pageId: string, sourcePath: string, 
   const title = cleanText($('#article-title').first().text()) || pageId;
   const body = $('#mw-content-text').first();
   const members = body.find('h2 + div a[href], li a[href]')
-    .map((_, a) => cleanText($(a).attr('href') || ''))
+    .map((_, a) => normalizeLinkTarget($(a).attr('href') || '', sourcePath))
     .get()
-    .map(h => h.replace(/^\/?wiki\//, '').replace(/\/index\.html$/, '').replace(/^\//, ''))
-    .filter(x => x && !x.startsWith('Special:'));
+    .filter((x): x is string => !!x && pageIds.has(x));
   return {
     identity: pageIdentity(pageId, title, 'concept', sourcePath),
     source: { repository, commit },
@@ -29,10 +29,9 @@ export function parseIndex($: CheerioAPI, pageId: string, sourcePath: string, re
   const title = cleanText($('#article-title').first().text()) || pageId;
   const body = $('#mw-content-text').first();
   const members = body.find('.category-plant-item a[href]')
-    .map((_, a) => cleanText($(a).attr('href') || ''))
+    .map((_, a) => normalizeLinkTarget($(a).attr('href') || '', sourcePath))
     .get()
-    .map(h => h.replace(/^\.?\/?wiki\//, '').replace(/\/index\.html$/, ''))
-    .filter(Boolean);
+    .filter((x): x is string => !!x && pageIds.has(x));
   return {
     identity: pageIdentity(pageId, title, 'index', sourcePath),
     source: { repository, commit },
