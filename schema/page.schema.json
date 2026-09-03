@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/practicalplants/page.schema.json",
+  "type": "object",
+  "required": ["identity", "source", "references", "links"],
+  "properties": {
+    "identity": { "type": "object", "required": ["pageId", "title", "pageType", "sourcePath"], "properties": { "pageId": {"type":"string"}, "title":{"type":"string"}, "pageType":{"enum":["plant","concept","index","unknown"]}, "sourcePath":{"type":"string"}}, "additionalProperties": true },
+    "source": { "type":"object", "required":["repository"], "properties":{"repository":{"type":"string"},"commit":{"type":"string"}}, "additionalProperties": false },
+    "references": { "type":"array", "items":{"type":"object","required":["id","rawText","urls"],"properties":{"id":{"type":"string"},"rawText":{"type":"string"},"author":{"type":"string"},"title":{"type":"string"},"publisher":{"type":"string"},"date":{"type":"string"},"isbn":{"type":"string"},"urls":{"type":"array","items":{"type":"string"}}},"additionalProperties":true}},
+    "links": { "type":"array", "items":{"$ref":"#/$defs/link"} }
+  },
+  "allOf": [
+    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"plant"}}}}},"then":{"required":["plant","taxonomy","fullData","narrative","uses","toxicity"]}},
+    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"concept"}}}}},"then":{"required":["concept"]}},
+    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"index"}}}}},"then":{"required":["index"]}},
+    {"if":{"properties":{"identity":{"properties":{"pageType":{"const":"unknown"}}}}},"then":{"required":["unknown"]}}
+  ],
+  "$defs": { "link": {"type":"object","required":["href","label","linkType"],"properties":{"href":{"type":"string"},"label":{"type":"string"},"targetPageId":{"type":"string"},"linkType":{"enum":["internal","external","unknown"]},"resolved":{"type":"boolean"}},"additionalProperties":false} },
+  "additionalProperties": true
+}
