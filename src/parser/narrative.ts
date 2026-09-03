@@ -12,7 +12,11 @@ export function extractNarrative($: CheerioAPI, sourcePath: string): NarrativeSe
     if (!title || !KNOWN.has(title)) return;
     const links = $(sectionEl).find('a[href]').map((_, a) => ({ href: $(a).attr('href') || '', label: cleanText($(a).text()), linkType: 'unknown' as const, redLink: $(a).hasClass('new') })).get();
     const paragraphs = $(sectionEl).find('p, .pfaf-notes').map((_, p) => cleanText($(p).text())).get().filter(Boolean);
-    const lists = $(sectionEl).find('ul, ol').map((_, list) => $(list).children('li').map((_, li) => cleanText($(li).text())).get().filter(Boolean)).get().filter(x => x.length);
+    const lists: string[][] = [];
+    $(sectionEl).find('ul, ol').each((_, list) => {
+      const items = $(list).children('li').map((_, li) => cleanText($(li).text())).get().filter(Boolean);
+      if (items.length) lists.push(items);
+    });
     sections.push({ id: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), title, paragraphs, lists, links, references: extractCitationIds($, sectionEl), sourceLocation: { page: sourcePath, section: title } });
   });
   return sections;

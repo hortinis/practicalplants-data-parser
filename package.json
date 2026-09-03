@@ -1,6 +1,6 @@
 {
   "name": "practicalplants-data-parser",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Offline parser for the recovered Practical Plants archive.",
   "type": "module",
