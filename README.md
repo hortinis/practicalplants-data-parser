@@ -31,7 +31,7 @@ output/
 
 One JSON file is emitted per scanned page. Unknown pages are retained.
 
-Common-name alias pages are emitted under `alias/`. Family, usage, category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility.
+Common-name alias pages are emitted under `alias/`. Family, usage, category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility. Collections include `completeness: "populated"` or `"empty"` so an empty generated list is not confused with a parser failure.
 
 ## Observed archive structures
 

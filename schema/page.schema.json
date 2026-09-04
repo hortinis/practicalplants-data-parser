@@ -434,11 +434,12 @@
     },
     "collection": {
       "type": "object",
-      "required": ["kind", "members"],
+      "required": ["kind", "members", "completeness"],
       "properties": {
         "kind": { "enum": ["family", "genus", "use", "category", "catalog", "unknown"] },
         "description": { "type": "string" },
-        "members": { "type": "array", "items": { "type": "string" } }
+        "members": { "type": "array", "items": { "type": "string" } },
+        "completeness": { "enum": ["populated", "empty"] }
       },
       "additionalProperties": false
     }

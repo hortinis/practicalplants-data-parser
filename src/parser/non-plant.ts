@@ -20,7 +20,8 @@ export function parseCollection($: CheerioAPI, pageId: string, sourcePath: strin
   const title = cleanText($('#article-title').first().text()) || pageId;
   const body = $('#mw-content-text').first();
   const members = body.find('li a[href]').map((_, a) => normalizeLinkTarget($(a).attr('href') || '', sourcePath)).get().filter((x): x is string => !!x && x !== pageId && pageIds.has(x));
-  return { identity: { pageId, title, pageType: 'collection', sourcePath }, source: { repository, commit }, references: extractReferences($), links: extractLinks($, sourcePath, pageIds), collection: { kind, description: cleanText($('#article-summary').first().text()) || undefined, members: [...new Set(members)].sort() } };
+  const uniqueMembers = [...new Set(members)].sort();
+  return { identity: { pageId, title, pageType: 'collection', sourcePath }, source: { repository, commit }, references: extractReferences($), links: extractLinks($, sourcePath, pageIds), collection: { kind, description: cleanText($('#article-summary').first().text()) || undefined, members: uniqueMembers, completeness: uniqueMembers.length ? 'populated' : 'empty' } };
 }
 
 export function parseConcept($: CheerioAPI, pageId: string, sourcePath: string, repository: string, commit: string | undefined, pageIds: Set<string>): ConceptPage {

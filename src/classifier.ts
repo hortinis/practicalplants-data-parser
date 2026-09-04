@@ -1,7 +1,6 @@
 import type { CheerioAPI } from 'cheerio';
 import type { PageType } from './model/types.js';
 import { cleanText } from './normalize/values.js';
-import { normalizeLinkTarget } from './parser/links.js';
 
 export type CollectionKind = 'family' | 'genus' | 'use' | 'category' | 'catalog' | 'unknown';
 export function collectionKind($: CheerioAPI, sourcePath = '', pageIds: Set<string> = new Set()): CollectionKind | undefined {
@@ -12,11 +11,6 @@ export function collectionKind($: CheerioAPI, sourcePath = '', pageIds: Set<stri
     return /^(?:Plants (?:in|with|which|that)|Members of this family|Pages (?:using|in)|List of |A-Z of )/i.test(text) ? text : '';
   }).get().find(Boolean);
   if (!heading) return undefined;
-  const hasMembers = body.find('li a[href]').toArray().some(a => {
-    const href = $(a).attr('href') || ''; const target = normalizeLinkTarget(href, sourcePath);
-    return pageIds.size ? !!target && pageIds.has(target) : /(?:^|\/)wiki\/[^/?#]+(?:\/index\.html)?(?:[#?].*)?$/i.test(href) || /(?:^|\?)title=[^&]+/i.test(href);
-  });
-  if (!hasMembers) return undefined;
   if (/^Members of this family/i.test(heading)) return 'family';
   if (/^Plants in the .+ genus/i.test(heading)) return 'genus';
   if (/^Plants with parts able to be used as/i.test(heading)) return 'use';

@@ -71,6 +71,14 @@ describe('non-plant observed structures', () => {
     const $ = load('<div id="article-title">Aceraceae</div><div id="mw-content-text"><h2>Members of this family</h2><ul><li><a href="/wiki/Acer_acuminatum">Acer acuminatum</a></li></ul></div>');
     const page = parseCollection($, 'Aceraceae', 'wiki/Aceraceae/index.html', 'Practical Plants recovered archive', undefined, new Set(['Acer_acuminatum']), 'family');
     expect(page.collection.members).toEqual(['Acer_acuminatum']);
+    expect(page.collection.completeness).toBe('populated');
+  });
+
+  it('preserves empty generated collections', () => {
+    const $ = load('<div id="article-title">Abortifacient</div><div id="mw-content-text"><h2>Plants with parts able to be used as an Abortifacient</h2></div>');
+    const page = parseCollection($, 'Abortifacient', 'wiki/Abortifacient/index.html', 'Practical Plants recovered archive', undefined, new Set(), 'use');
+    expect(page.collection.members).toEqual([]);
+    expect(page.collection.completeness).toBe('empty');
   });
 
   it('extracts genus members', () => {
