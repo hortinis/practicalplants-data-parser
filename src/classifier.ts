@@ -20,9 +20,8 @@ export function collectionKind($: CheerioAPI, sourcePath = '', pageIds: Set<stri
 }
 
 export function classifyPage($: CheerioAPI, sourcePath = '', pageIds: Set<string> = new Set()): PageType {
-  if ($('#plant-datatable').length || $('.plant-name .binomial').length && $('#page-header.with-image').length) return 'plant';
+  if ($('#plant-datatable').length || $('#article-title .plant-name .binomial').length) return 'plant';
   const summary = cleanText($('#article-summary').first().text());
-  if (/^is a .*common name.* for /i.test(summary) && $('#article-summary a[href]').length) return 'alias';
 
   const title = cleanText($('#article-title').first().text());
   const pageId = sourcePath.replace(/^wiki\//i, '').replace(/\/index\.html$/i, '');
@@ -33,5 +32,6 @@ export function classifyPage($: CheerioAPI, sourcePath = '', pageIds: Set<string
   if (headings.some(h => /^Plants inhabiting this ecosystem niche$/i.test(h)) || /ecosystem niche/i.test(categories) && title) return 'concept';
   const kind = collectionKind($, sourcePath, pageIds);
   if (kind) return kind === 'genus' || kind === 'unknown' ? 'index' : 'collection';
+  if (/^is a .*common name.* for /i.test(summary) && $('#article-summary a[href]').length) return 'alias';
   return 'unknown';
 }

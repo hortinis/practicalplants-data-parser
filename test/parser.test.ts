@@ -67,10 +67,11 @@ describe('non-plant observed structures', () => {
   });
 
   it('extracts common-name aliases', () => {
-    const $ = load('<div id="article-title">Achira</div><div id="mw-content-text"><div id="article-summary">is a common name for <a href="/wiki/Canna_edulis">Canna edulis</a>.</div></div>');
-    const page = parseAlias($, 'Achira', 'wiki/Achira/index.html', 'Practical Plants recovered archive', undefined, new Set(['Canna_edulis']));
+    const $ = load('<div id="article-title">Achira</div><div id="mw-content-text"><div id="article-summary">is a <a href="/wiki/Common_name">common name</a> for <a href="/wiki/Canna_edulis">Canna edulis</a>.</div></div>');
+    const page = parseAlias($, 'Achira', 'wiki/Achira/index.html', 'Practical Plants recovered archive', undefined, new Set());
     expect(page.identity.pageType).toBe('alias');
     expect(page.alias.targets).toEqual(['Canna_edulis']);
+    expect(page.links.find(link => link.targetPageId === 'Canna_edulis')?.resolved).toBe(false);
   });
 
   it('extracts family collections with absolute wiki URLs', () => {
@@ -78,6 +79,14 @@ describe('non-plant observed structures', () => {
     const page = parseCollection($, 'Aceraceae', 'wiki/Aceraceae/index.html', 'Practical Plants recovered archive', undefined, new Set(['Acer_acuminatum']), 'family');
     expect(page.collection.members).toEqual(['Acer_acuminatum']);
     expect(page.collection.completeness).toBe('populated');
+  });
+
+  it('preserves unresolved collection members and ignores secondary links', () => {
+    const $ = load('<div id="article-title">Family</div><div id="mw-content-text"><h2>Members of this family</h2><ul><li><a href="/wiki/Missing_plant">Missing plant</a> (<a href="/wiki/Common_name">Name</a>)</li></ul></div>');
+    const page = parseCollection($, 'Family', 'wiki/Family/index.html', 'Practical Plants recovered archive', undefined, new Set(['Common_name']), 'family');
+    expect(page.collection.members).toEqual(['Missing_plant']);
+    expect(page.collection.completeness).toBe('populated');
+    expect(page.links.find(link => link.targetPageId === 'Missing_plant')?.resolved).toBe(false);
   });
 
   it('preserves empty generated collections', () => {
@@ -129,11 +138,37 @@ describe('corpus-derived link and index edge cases', () => {
     const $ = load(`
       <div id="page-header"><h1 id="article-title">Abutilon</h1></div>
       <div id="mw-content-text">
-        <div id="article-summary">is a common name used for a number of distinct species.</div>
+        <div id="article-summary">is a <a href="../../wiki/Common_name/index.html">common name</a> used for a number of distinct species.</div>
         <h2><span class="mw-headline">Plants with the <a href="../../wiki/Common_name/index.html">common name</a> Abutilon</span></h2>
         <div><ul><li><a href="../../wiki/Abutilon_megapotamicum/index.html">Abutilon megapotamicum</a></li></ul></div>
       </div>`);
-    expect(classifyPage($)).toBe('index');
+    const pageIds = new Set(['Common_name', 'A-Z_of_common_names', 'Trailing_Abutilon']);
+    expect(classifyPage($, 'wiki/Abutilon/index.html', pageIds)).toBe('index');
+    const page = parseIndex($, 'Abutilon', 'wiki/Abutilon/index.html', 'Practical Plants recovered archive', undefined, pageIds);
+    expect(page.index.members).toEqual(['Abutilon_megapotamicum']);
+    expect(page.links.find(link => link.targetPageId === 'Abutilon_megapotamicum')?.resolved).toBe(false);
+  });
+
+  it('does not classify polyculture pages as plants because their summaries name plants', () => {
+    const polyculture = load(`
+      <header id="page-header" class="with-image">
+        <h1 id="article-title">Polyculture:Three sisters</h1>
+        <div id="article-summary">A polyculture comprising of
+          <a href="/wiki/Zea_mays"><span class="plant-name"><em class="binomial">Zea mays</em></span></a>
+        </div>
+      </header>
+      <div id="mw-content-text"><h2>Polyculture members</h2></div>`);
+    expect(classifyPage(polyculture, 'wiki/Polyculture:Three_sisters/index.html')).toBe('unknown');
+
+    const legacyPath = load(`
+      <header id="page-header" class="with-image">
+        <h1 id="article-title">Polyculture:Sunchoke and Hog Peanut</h1>
+        <div id="article-summary">A polyculture comprising of
+          <a href="/wiki/Helianthus_tuberosus"><span class="plant-name"><em class="binomial">Helianthus tuberosus</em></span></a>
+        </div>
+      </header>
+      <div id="mw-content-text"><h2>Polyculture members</h2></div>`);
+    expect(classifyPage(legacyPath, 'wiki/Sunchoke-hog_peanut/index.html')).toBe('unknown');
   });
 
   it('preserves repeated Full Data fields instead of overwriting them', () => {

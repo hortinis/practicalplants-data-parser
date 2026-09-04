@@ -40,7 +40,7 @@ export function normalizeLinkTarget(href: string, sourcePath?: string): string |
   return decodePageId(targetPath);
 }
 
-function isInternalWikiHref(href: string): boolean {
+export function isInternalWikiHref(href: string): boolean {
   return href.startsWith('./') || href.startsWith('../') || href.startsWith('/wiki/') || href.startsWith('wiki/') ||
     href.startsWith('/w/') || href.startsWith('w/') ||
     /^https?:\/\/practicalplants\.org\/(?:wiki|w\/index\.php)(?:[/?]|$)/i.test(href);
