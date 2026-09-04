@@ -81,6 +81,12 @@ describe('non-plant observed structures', () => {
     expect(page.collection.completeness).toBe('empty');
   });
 
+  it('classifies specialized use collections', async () => {
+    const { classifyPage } = await import('../src/classifier.js');
+    const $ = load('<div id="article-title">Fruit</div><div id="mw-content-text"><h2>Fruit with edible uses</h2><ul><li><a href="/wiki/Solanum_lycopersicum">Tomato</a></li></ul></div>');
+    expect(classifyPage($, 'wiki/Fruit/index.html', new Set(['Solanum_lycopersicum']))).toBe('collection');
+  });
+
   it('extracts genus members', () => {
     const $ = load(fixture('abies-index-structure.html'));
     const page = parseIndex($, 'Abies', 'wiki/Abies/index.html', 'Practical Plants recovered archive', undefined, new Set(['Abies', 'Abies_amabilis']));

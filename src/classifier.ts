@@ -8,12 +8,12 @@ export function collectionKind($: CheerioAPI, sourcePath = '', pageIds: Set<stri
   if (!body.length) return undefined;
   const heading = body.find('h2, h3').map((_, h) => {
     const text = cleanText($(h).text());
-    return /^(?:Plants (?:in|with|which|that)|Members of this family|Pages (?:using|in)|List of |A-Z of )/i.test(text) ? text : '';
+    return /^(?:Plants (?:in|with|which|that)|Members of this family|Pages (?:using|in)|List of |A-Z of |Plants this animal uses for forage|[A-Z][A-Za-z -]+ with (?:edible|material|medicinal) uses)/i.test(text) ? text : '';
   }).get().find(Boolean);
   if (!heading) return undefined;
   if (/^Members of this family/i.test(heading)) return 'family';
   if (/^Plants in the .+ genus/i.test(heading)) return 'genus';
-  if (/^Plants with parts able to be used as/i.test(heading)) return 'use';
+  if (/^Plants with parts able to be used as|^Plants this animal uses for forage|^[A-Z][A-Za-z -]+ with (?:edible|material|medicinal) uses/i.test(heading)) return 'use';
   if (/^Pages in category/i.test(heading)) return 'category';
   if (/^A-Z of/i.test(heading)) return 'catalog';
   return 'unknown';
