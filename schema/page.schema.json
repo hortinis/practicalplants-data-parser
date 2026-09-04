@@ -69,11 +69,25 @@
     "index": {
       "type": "object"
     },
+    "alias": {
+      "$ref": "#/$defs/alias"
+    },
+    "collection": {
+      "$ref": "#/$defs/collection"
+    },
     "unknown": {
       "type": "object"
     }
   },
   "allOf": [
+    {
+      "if": { "properties": { "identity": { "properties": { "pageType": { "const": "alias" } } } } },
+      "then": { "required": ["alias"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "pageType": { "const": "collection" } } } } },
+      "then": { "required": ["collection"] }
+    },
     {
       "if": {
         "properties": {
@@ -171,6 +185,8 @@
         "pageType": {
           "enum": [
             "plant",
+            "alias",
+            "collection",
             "concept",
             "index",
             "unknown"
@@ -403,6 +419,26 @@
         "sourceLocation": {
           "$ref": "#/$defs/sourceLocation"
         }
+      },
+      "additionalProperties": false
+    },
+    "alias": {
+      "type": "object",
+      "required": ["targets"],
+      "properties": {
+        "kind": { "enum": ["common_name", "synonym", "redirect", "unknown"] },
+        "description": { "type": "string" },
+        "targets": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "collection": {
+      "type": "object",
+      "required": ["kind", "members"],
+      "properties": {
+        "kind": { "enum": ["family", "genus", "use", "category", "catalog", "unknown"] },
+        "description": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": false
     }

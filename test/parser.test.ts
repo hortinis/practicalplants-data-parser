@@ -5,7 +5,7 @@ import { extractFullData } from '../src/parser/full-data.js';
 import { extractToxicity, extractUses } from '../src/parser/uses.js';
 import { extractReferences } from '../src/parser/references.js';
 import { parsePlant } from '../src/parser/plant.js';
-import { parseIndex, parseConcept } from '../src/parser/non-plant.js';
+import { parseAlias, parseCollection, parseIndex, parseConcept } from '../src/parser/non-plant.js';
 import { valueStatus, normalizeSafe } from '../src/normalize/values.js';
 import { readFileSync } from 'node:fs';
 
@@ -60,6 +60,19 @@ describe('observed Practical Plants structures', () => {
 });
 
 describe('non-plant observed structures', () => {
+  it('extracts common-name aliases', () => {
+    const $ = load('<div id="article-title">Achira</div><div id="mw-content-text"><div id="article-summary">is a common name for <a href="/wiki/Canna_edulis">Canna edulis</a>.</div></div>');
+    const page = parseAlias($, 'Achira', 'wiki/Achira/index.html', 'Practical Plants recovered archive', undefined, new Set(['Canna_edulis']));
+    expect(page.identity.pageType).toBe('alias');
+    expect(page.alias.targets).toEqual(['Canna_edulis']);
+  });
+
+  it('extracts family collections with absolute wiki URLs', () => {
+    const $ = load('<div id="article-title">Aceraceae</div><div id="mw-content-text"><h2>Members of this family</h2><ul><li><a href="/wiki/Acer_acuminatum">Acer acuminatum</a></li></ul></div>');
+    const page = parseCollection($, 'Aceraceae', 'wiki/Aceraceae/index.html', 'Practical Plants recovered archive', undefined, new Set(['Acer_acuminatum']), 'family');
+    expect(page.collection.members).toEqual(['Acer_acuminatum']);
+  });
+
   it('extracts genus members', () => {
     const $ = load(fixture('abies-index-structure.html'));
     const page = parseIndex($, 'Abies', 'wiki/Abies/index.html', 'Practical Plants recovered archive', undefined, new Set(['Abies', 'Abies_amabilis']));

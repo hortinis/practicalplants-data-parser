@@ -20,6 +20,8 @@ npm run parse -- /path/to/practicalplants-archive.org-recovery --output ./output
 output/
   pages/
     plant/
+    alias/
+    collection/
     concept/
     index/
     unknown/
@@ -28,6 +30,8 @@ output/
 ```
 
 One JSON file is emitted per scanned page. Unknown pages are retained.
+
+Common-name alias pages are emitted under `alias/`. Family, usage, category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility.
 
 ## Observed archive structures
 
