@@ -1,5 +1,5 @@
 import type { CheerioAPI } from 'cheerio';
-import type { AliasPage, CollectionPage, ConceptPage, IndexPage, UnknownPage } from '../model/types.js';
+import type { AliasPage, CollectionPage, ConceptPage, DocumentationPage, IndexPage, UnknownPage } from '../model/types.js';
 import { cleanText } from '../normalize/values.js';
 import { normalizeLinkTarget } from './links.js';
 import { extractLinks } from './links.js';
@@ -22,6 +22,13 @@ export function parseCollection($: CheerioAPI, pageId: string, sourcePath: strin
   const members = body.find('li a[href]').map((_, a) => normalizeLinkTarget($(a).attr('href') || '', sourcePath)).get().filter((x): x is string => !!x && x !== pageId && pageIds.has(x));
   const uniqueMembers = [...new Set(members)].sort();
   return { identity: { pageId, title, pageType: 'collection', sourcePath }, source: { repository, commit }, references: extractReferences($), links: extractLinks($, sourcePath, pageIds), collection: { kind, description: cleanText($('#article-summary').first().text()) || undefined, members: uniqueMembers, completeness: uniqueMembers.length ? 'populated' : 'empty' } };
+}
+
+export function parseDocumentation($: CheerioAPI, pageId: string, sourcePath: string, repository: string, commit: string | undefined, pageIds: Set<string>): DocumentationPage {
+  const title = cleanText($('#article-title').first().text()) || pageId;
+  const body = $('#mw-content-text').first();
+  const namespace = pageId.includes(':') ? pageId.split(':', 1)[0] : undefined;
+  return { identity: { pageId, title, pageType: 'documentation', sourcePath }, source: { repository, commit }, references: extractReferences($), links: extractLinks($, sourcePath, pageIds), documentation: { namespace, headings: $('h2,h3').map((_, h) => cleanText($(h).text())).get().filter(Boolean), text: cleanText(body.text()) || undefined } };
 }
 
 export function parseConcept($: CheerioAPI, pageId: string, sourcePath: string, repository: string, commit: string | undefined, pageIds: Set<string>): ConceptPage {

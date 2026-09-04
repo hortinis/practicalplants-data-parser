@@ -75,11 +75,18 @@
     "collection": {
       "$ref": "#/$defs/collection"
     },
+    "documentation": {
+      "$ref": "#/$defs/documentation"
+    },
     "unknown": {
       "type": "object"
     }
   },
   "allOf": [
+    {
+      "if": { "properties": { "identity": { "properties": { "pageType": { "const": "documentation" } } } } },
+      "then": { "required": ["documentation"] }
+    },
     {
       "if": { "properties": { "identity": { "properties": { "pageType": { "const": "alias" } } } } },
       "then": { "required": ["alias"] }
@@ -187,6 +194,7 @@
             "plant",
             "alias",
             "collection",
+            "documentation",
             "concept",
             "index",
             "unknown"
@@ -440,6 +448,16 @@
         "description": { "type": "string" },
         "members": { "type": "array", "items": { "type": "string" } },
         "completeness": { "enum": ["populated", "empty"] }
+      },
+      "additionalProperties": false
+    },
+    "documentation": {
+      "type": "object",
+      "required": ["headings"],
+      "properties": {
+        "namespace": { "type": "string" },
+        "headings": { "type": "array", "items": { "type": "string" } },
+        "text": { "type": "string" }
       },
       "additionalProperties": false
     }

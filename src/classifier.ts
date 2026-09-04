@@ -25,6 +25,8 @@ export function classifyPage($: CheerioAPI, sourcePath = '', pageIds: Set<string
   if (/^is a .*common name.* for /i.test(summary) && $('#article-summary a[href]').length) return 'alias';
 
   const title = cleanText($('#article-title').first().text());
+  const pageId = sourcePath.replace(/^wiki\//i, '').replace(/\/index\.html$/i, '');
+  if (/^(?:Help|Template|Category|Concept|Form|Property|Talk|User|MediaWiki|PracticalPlants):/i.test(pageId) || /^(?:Search|Wiki|Todos|Transitioning_PFAF)$/i.test(pageId)) return 'documentation';
   const headings = $('h2, h3').map((_, h) => cleanText($(h).text())).get();
   const categories = cleanText($('#catlinks').first().text()).toLowerCase();
 

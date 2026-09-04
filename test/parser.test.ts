@@ -60,6 +60,12 @@ describe('observed Practical Plants structures', () => {
 });
 
 describe('non-plant observed structures', () => {
+  it('classifies documentation namespaces', async () => {
+    const { classifyPage } = await import('../src/classifier.js');
+    const $ = load('<div id="article-title">Help</div><div id="mw-content-text"><h2>Contents</h2><p>Documentation</p></div>');
+    expect(classifyPage($, 'wiki/Help:Contents/index.html', new Set())).toBe('documentation');
+  });
+
   it('extracts common-name aliases', () => {
     const $ = load('<div id="article-title">Achira</div><div id="mw-content-text"><div id="article-summary">is a common name for <a href="/wiki/Canna_edulis">Canna edulis</a>.</div></div>');
     const page = parseAlias($, 'Achira', 'wiki/Achira/index.html', 'Practical Plants recovered archive', undefined, new Set(['Canna_edulis']));
