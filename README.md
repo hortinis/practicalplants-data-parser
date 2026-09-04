@@ -46,6 +46,7 @@ Important observed selectors include:
 - `#plant-datatable` and nested `.infobox-section`, `.infobox-subsection`, `.infobox-title`, `.infobox-content`
 - `.toxicpart`, `.toxicpart-compounds`, `.toxicpart-toxicity`
 - `#plant-edible-uses`, `#plant-material-uses`, `#plant-medicinal-uses`
+- category-level `.pfaf-notes` use prose, with links and citation identifiers
 - `.plant-uses`, `.plant-use-list`, `.plant-use-list-item`
 - `ol.references > li`
 - `.category-plant-item` on genus/index pages
@@ -75,6 +76,7 @@ A full recovered-archive run completed with 11,019 parsed pages and 0 parser err
 - Index members are collected from list links and filtered against the scanned page set, so structures such as common-name indexes are supported in addition to genus indexes.
 - Repeated Full Data field labels are accumulated rather than overwritten. This preserves duplicate source fields such as repeated `Cultivation` entries.
 - Narrative and Full Data links use the same link parser, preserving wiki target identity and red-link information. Use records likewise retain their links.
+- Detailed edible, material, and medicinal prose is retained separately in plant `useNotes`, preserving its category, links, citation markers, and source location without duplicating category-level notes across individual use labels.
 
 The source archive contains generated MediaWiki list/index pages in addition to plant pages. For example, `Abutilon` has a `Plants with the common name Abutilon` collection and three plant entries, while `Abies` uses `Plants in the Abies genus`. These are both index structures. Descriptive pages without an actual collection remain eligible for `unknown`.
 

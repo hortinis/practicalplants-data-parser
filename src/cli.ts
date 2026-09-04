@@ -22,5 +22,5 @@ pages.sort((a,b) => a.identity.pageId.localeCompare(b.identity.pageId)); errors.
 const counts = pages.reduce<Record<string,number>>((acc,p) => { acc[p.identity.pageType]=(acc[p.identity.pageType]||0)+1; return acc; },{});
 const collectionPages = pages.filter((p): p is CollectionPage => p.identity.pageType === 'collection');
 const collectionCounts = collectionPages.reduce<Record<string, number>>((acc, p) => { const key = `${p.collection.kind}.${p.collection.completeness}`; acc[key] = (acc[key] || 0) + 1; return acc; }, {});
-await writeOutput(output,pages,errors,{ parserVersion:'0.5.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.5.0', pageCounts:counts, collectionCounts, pageCount:pages.length, errorCount:errors.length });
+await writeOutput(output,pages,errors,{ parserVersion:'0.6.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.6.0', pageCounts:counts, collectionCounts, pageCount:pages.length, errorCount:errors.length });
 console.log(`Parsed ${pages.length} pages with ${errors.length} errors.`);

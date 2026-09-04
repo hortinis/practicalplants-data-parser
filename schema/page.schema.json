@@ -57,6 +57,12 @@
         "$ref": "#/$defs/use"
       }
     },
+    "useNotes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/useNote"
+      }
+    },
     "toxicity": {
       "type": "array",
       "items": {
@@ -114,6 +120,7 @@
           "fullData",
           "narrative",
           "uses",
+          "useNotes",
           "toxicity"
         ]
       }
@@ -392,6 +399,44 @@
           "items": {
             "$ref": "#/$defs/link"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "useNote": {
+      "type": "object",
+      "required": [
+        "category",
+        "text",
+        "links",
+        "references",
+        "sourceLocation"
+      ],
+      "properties": {
+        "category": {
+          "enum": [
+            "edible",
+            "material",
+            "medicinal"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourceLocation": {
+          "$ref": "#/$defs/sourceLocation"
         }
       },
       "additionalProperties": false

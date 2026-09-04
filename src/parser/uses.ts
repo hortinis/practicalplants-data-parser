@@ -1,5 +1,5 @@
 import type { CheerioAPI } from 'cheerio';
-import type { ToxicityRecord, UseRecord } from '../model/types.js';
+import type { ToxicityRecord, UseNoteRecord, UseRecord } from '../model/types.js';
 import { cleanText } from '../normalize/values.js';
 import { extractCitationIds } from './references.js';
 import { extractLinks } from './links.js';
@@ -17,6 +17,25 @@ export function extractUses($: CheerioAPI, sourcePath: string, pageIds: Set<stri
         const links = $(item).find('a');
         const use = cleanText(links.first().text()) || cleanText($(item).text()) || undefined;
         records.push({ category, plantPart, use, text: cleanText($(item).text()), links: extractLinks($, sourcePath, pageIds, $(item)), references: extractCitationIds($, item), sourceLocation: { page: sourcePath, section: 'Uses', field: `${category} uses` } });
+      });
+    });
+  }
+  return records;
+}
+
+export function extractUseNotes($: CheerioAPI, sourcePath: string, pageIds: Set<string> = new Set()): UseNoteRecord[] {
+  const records: UseNoteRecord[] = [];
+  for (const category of categories) {
+    const section = $(`#plant-${category}-uses`).first();
+    section.find('.pfaf-notes').each((_, note) => {
+      const prose = $(note).clone();
+      prose.find('sup.reference, .cc-nc-logo').remove();
+      records.push({
+        category,
+        text: cleanText(prose.text()),
+        links: extractLinks($, sourcePath, pageIds, $(note)),
+        references: extractCitationIds($, note),
+        sourceLocation: { page: sourcePath, section: 'Uses', field: `${category} notes` }
       });
     });
   }

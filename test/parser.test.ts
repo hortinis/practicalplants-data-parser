@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { load } from 'cheerio';
 import { classifyPage } from '../src/classifier.js';
 import { extractFullData } from '../src/parser/full-data.js';
-import { extractToxicity, extractUses } from '../src/parser/uses.js';
+import { extractToxicity, extractUseNotes, extractUses } from '../src/parser/uses.js';
 import { extractReferences } from '../src/parser/references.js';
 import { parsePlant } from '../src/parser/plant.js';
 import { parseAlias, parseCollection, parseIndex, parseConcept } from '../src/parser/non-plant.js';
@@ -44,6 +44,24 @@ describe('observed Practical Plants structures', () => {
     expect(result[0].category).toBe('edible');
     expect(result[0].plantPart).toBe('Fruit');
     expect(result[0].use).toContain('Fresh');
+  });
+  it('extracts category-level use notes with clean prose and provenance', () => {
+    const result = extractUseNotes($, 'wiki/Solanum_lycopersicum/index.html', new Set(['Fresh']));
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      category: 'edible',
+      text: 'Fruit can be eaten fresh or preserved using an external recipe.',
+      references: ['PFAFimport-21', 'PFAFimport-21'],
+      sourceLocation: { page: 'wiki/Solanum_lycopersicum/index.html', section: 'Uses', field: 'edible notes' }
+    });
+    expect(result[0].links).toEqual([
+      expect.objectContaining({ targetPageId: 'Fresh', linkType: 'internal', resolved: true }),
+      expect.objectContaining({ href: 'https://example.org/recipe', linkType: 'external' })
+    ]);
+  });
+  it('includes use notes in parsed plant pages', () => {
+    const page = parsePlant($, 'Solanum_lycopersicum', 'wiki/Solanum_lycopersicum/index.html', 'Practical Plants recovered archive', 'abc', new Set(['Fresh']));
+    expect(page.useNotes).toHaveLength(1);
   });
   it('extracts toxicity and citation IDs', () => {
     const result = extractToxicity($, 'wiki/Solanum_lycopersicum/index.html');
