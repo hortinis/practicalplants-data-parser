@@ -7,6 +7,8 @@ import { extractReferences } from '../src/parser/references.js';
 import { parsePlant } from '../src/parser/plant.js';
 import { parseAlias, parseCollection, parseIndex, parseConcept } from '../src/parser/non-plant.js';
 import { valueStatus, normalizeSafe } from '../src/normalize/values.js';
+import { recoverEmptyUseCollections } from '../src/recovery/use-collections.js';
+import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/observed/${name}`, import.meta.url), 'utf8');
@@ -97,6 +99,7 @@ describe('non-plant observed structures', () => {
     const page = parseCollection($, 'Aceraceae', 'wiki/Aceraceae/index.html', 'Practical Plants recovered archive', undefined, new Set(['Acer_acuminatum']), 'family');
     expect(page.collection.members).toEqual(['Acer_acuminatum']);
     expect(page.collection.completeness).toBe('populated');
+    expect(page.collection.memberSource).toBe('archive_page');
   });
 
   it('preserves unresolved collection members and ignores secondary links', () => {
@@ -112,6 +115,7 @@ describe('non-plant observed structures', () => {
     const page = parseCollection($, 'Abortifacient', 'wiki/Abortifacient/index.html', 'Practical Plants recovered archive', undefined, new Set(), 'use');
     expect(page.collection.members).toEqual([]);
     expect(page.collection.completeness).toBe('empty');
+    expect(page.collection.memberSource).toBe('archive_page');
   });
 
   it('classifies specialized use collections', async () => {
@@ -131,6 +135,49 @@ describe('non-plant observed structures', () => {
     const page = parseConcept($, 'Canopy', 'wiki/Canopy/index.html', 'Practical Plants recovered archive', undefined, new Set(['Canopy', 'Abies_amabilis']));
     expect(page.identity.pageType).toBe('concept');
     expect(page.concept.members).toEqual(['Abies_amabilis']);
+  });
+});
+
+describe('empty use collection recovery', () => {
+  const source = { repository: 'test' };
+  const base = { source, references: [], links: [] };
+
+  function collection(pageId: string, title = pageId): CollectionPage {
+    return { ...base, identity: { pageId, title, pageType: 'collection', sourcePath: `wiki/${pageId}/index.html` }, collection: { kind: 'use', members: [], completeness: 'empty', memberSource: 'archive_page' } };
+  }
+
+  function plant(pageId: string, uses: PlantPage['uses']): PlantPage {
+    return { ...base, identity: { pageId, title: pageId, pageType: 'plant', sourcePath: `wiki/${pageId}/index.html` }, plant: { commonNames: [] }, taxonomy: {}, fullData: {}, narrative: [], uses, useNotes: [], toxicity: [] };
+  }
+
+  it('recovers members from plant parts, use labels, and linked use targets', () => {
+    const seed = collection('Seed', 'Seeds');
+    const wood = collection('Wood');
+    const febrifuge = collection('Febrifuge');
+    const pages = [
+      seed,
+      wood,
+      febrifuge,
+      plant('Alpha', [{ category: 'edible', plantPart: 'Seeds', references: [] }]),
+      plant('Beta', [{ category: 'material', use: 'Wood', references: [] }]),
+      plant('Gamma', [{ category: 'medicinal', use: 'Reduces fever', links: [{ href: '/wiki/Febrifuge', label: 'Reduces fever', targetPageId: 'Febrifuge', linkType: 'internal' }], references: [] }])
+    ];
+
+    expect(recoverEmptyUseCollections(pages)).toEqual({ collectionsRecovered: 3, membershipsRecovered: 3 });
+    expect(seed.collection).toMatchObject({ members: ['Alpha'], completeness: 'populated', memberSource: 'plant_uses_inverse' });
+    expect(wood.collection.members).toEqual(['Beta']);
+    expect(febrifuge.collection.members).toEqual(['Gamma']);
+  });
+
+  it('keeps unmatched and already populated collections unchanged', () => {
+    const unmatched = collection('Water_filter');
+    const populated = collection('Wood');
+    populated.collection = { kind: 'use', members: ['Existing'], completeness: 'populated', memberSource: 'archive_page' };
+    const pages = [unmatched, populated, plant('New', [{ category: 'material', use: 'Wood', references: [] }])];
+
+    expect(recoverEmptyUseCollections(pages)).toEqual({ collectionsRecovered: 0, membershipsRecovered: 0 });
+    expect(unmatched.collection).toMatchObject({ members: [], completeness: 'empty', memberSource: 'archive_page' });
+    expect(populated.collection.members).toEqual(['Existing']);
   });
 });
 

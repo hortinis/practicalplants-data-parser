@@ -487,12 +487,13 @@
     },
     "collection": {
       "type": "object",
-      "required": ["kind", "members", "completeness"],
+      "required": ["kind", "members", "completeness", "memberSource"],
       "properties": {
         "kind": { "enum": ["family", "genus", "use", "category", "catalog", "unknown"] },
         "description": { "type": "string" },
         "members": { "type": "array", "items": { "type": "string" } },
-        "completeness": { "enum": ["populated", "empty"] }
+        "completeness": { "enum": ["populated", "empty"] },
+        "memberSource": { "enum": ["archive_page", "plant_uses_inverse"] }
       },
       "additionalProperties": false
     },

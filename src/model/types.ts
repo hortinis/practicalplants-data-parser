@@ -16,7 +16,7 @@ export interface PlantPage extends PPPageBase { identity: PPPageBase['identity']
 export interface ConceptPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'concept' }; concept: { description?: string; members: string[] }; }
 export interface IndexPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'index' }; index: { description?: string; members: string[] }; }
 export interface AliasPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'alias' }; alias: { kind: 'common_name' | 'synonym' | 'redirect' | 'unknown'; description?: string; targets: string[] }; }
-export interface CollectionPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'collection' }; collection: { kind: 'family' | 'genus' | 'use' | 'category' | 'catalog' | 'unknown'; description?: string; members: string[]; completeness: 'populated' | 'empty' }; }
+export interface CollectionPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'collection' }; collection: { kind: 'family' | 'genus' | 'use' | 'category' | 'catalog' | 'unknown'; description?: string; members: string[]; completeness: 'populated' | 'empty'; memberSource: 'archive_page' | 'plant_uses_inverse' }; }
 export interface DocumentationPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'documentation' }; documentation: { namespace?: string; headings: string[]; text?: string }; }
 export interface UnknownPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'unknown' }; unknown: { headings: string[]; text?: string }; }
 export type PPPage = PlantPage | AliasPage | CollectionPage | ConceptPage | IndexPage | DocumentationPage | UnknownPage;

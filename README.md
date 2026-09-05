@@ -32,7 +32,7 @@ output/
 
 One JSON file is emitted per scanned page. Unknown pages are retained.
 
-Common-name alias pages are emitted under `alias/`. Family, usage (including plant-part and animal-forage lists), category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility. Collections include `completeness: "populated"` or `"empty"` so an empty generated list is not confused with a parser failure.
+Common-name alias pages are emitted under `alias/`. Family, usage (including plant-part and animal-forage lists), category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility. Collections include `completeness: "populated"` or `"empty"` so an empty generated list is not confused with a parser failure. Their `memberSource` distinguishes lists read from the archive page from empty use lists reconstructed through inverse relationships in plant `uses` records.
 
 Help, template, category, concept, form, property, discussion, user and Practical Plants administration pages are emitted under `documentation/` for classification purposes.
 
@@ -77,6 +77,7 @@ A full recovered-archive run completed with 11,019 parsed pages and 0 parser err
 - Repeated Full Data field labels are accumulated rather than overwritten. This preserves duplicate source fields such as repeated `Cultivation` entries.
 - Narrative and Full Data links use the same link parser, preserving wiki target identity and red-link information. Use records likewise retain their links.
 - Detailed edible, material, and medicinal prose is retained separately in plant `useNotes`, preserving its category, links, citation markers, and source location without duplicating category-level notes across individual use labels.
+- Empty generated use collections are reconstructed after the corpus is parsed by matching their page identity to plant parts, use labels, and linked use targets. Recovered lists are marked with `memberSource: "plant_uses_inverse"`; unmatched collections remain explicitly empty.
 
 The source archive contains generated MediaWiki list/index pages in addition to plant pages. For example, `Abutilon` has a `Plants with the common name Abutilon` collection and three plant entries, while `Abies` uses `Plants in the Abies genus`. These are both index structures. Descriptive pages without an actual collection remain eligible for `unknown`.
 

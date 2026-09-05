@@ -30,7 +30,7 @@ export function parseCollection($: CheerioAPI, pageId: string, sourcePath: strin
   const title = cleanText($('#article-title').first().text()) || pageId;
   const members = primaryListTargets($, sourcePath).filter(x => x !== pageId);
   const uniqueMembers = [...new Set(members)].sort();
-  return { identity: { pageId, title, pageType: 'collection', sourcePath }, source: { repository, commit }, references: extractReferences($), links: extractLinks($, sourcePath, pageIds), collection: { kind, description: cleanText($('#article-summary').first().text()) || undefined, members: uniqueMembers, completeness: uniqueMembers.length ? 'populated' : 'empty' } };
+  return { identity: { pageId, title, pageType: 'collection', sourcePath }, source: { repository, commit }, references: extractReferences($), links: extractLinks($, sourcePath, pageIds), collection: { kind, description: cleanText($('#article-summary').first().text()) || undefined, members: uniqueMembers, completeness: uniqueMembers.length ? 'populated' : 'empty', memberSource: 'archive_page' } };
 }
 
 export function parseDocumentation($: CheerioAPI, pageId: string, sourcePath: string, repository: string, commit: string | undefined, pageIds: Set<string>): DocumentationPage {
