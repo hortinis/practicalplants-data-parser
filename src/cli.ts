@@ -7,10 +7,11 @@ import { parseAlias, parseCollection, parseConcept, parseDocumentation, parseInd
 import { validatePage } from './validate.js';
 import { writeOutput } from './output.js';
 import { recoverEmptyUseCollections } from './recovery/use-collections.js';
+import { downloadPrimaryImages } from './recovery/images.js';
 import type { CollectionPage, PPPage, ParseError } from './model/types.js';
 
-const args = process.argv.slice(2); const source = args[0]; const outIndex = args.indexOf('--output'); const output = outIndex >= 0 ? args[outIndex + 1] : './output';
-if (!source || !output) { console.error('Usage: npm run parse -- <archive-path> --output <output-path>'); process.exit(2); }
+const args = process.argv.slice(2); const source = args[0]; const outIndex = args.indexOf('--output'); const output = outIndex >= 0 ? args[outIndex + 1] : './output'; const shouldDownloadImages = args.includes('--download-images');
+if (!source || !output) { console.error('Usage: npm run parse -- <archive-path> --output <output-path> [--download-images]'); process.exit(2); }
 const scan = scanSource(source); const pageIds = new Set(scan.pages.map(p => p.pageId)); const pages: PPPage[] = []; const errors: ParseError[] = [];
 for (const candidate of scan.pages) {
   try {
@@ -20,9 +21,10 @@ for (const candidate of scan.pages) {
   } catch (error) { errors.push({ sourcePath: candidate.sourcePath, error: error instanceof Error ? error.message : String(error), severity: 'error' }); }
 }
 const collectionRecovery = recoverEmptyUseCollections(pages);
+const imageRecovery = shouldDownloadImages ? await downloadPrimaryImages(pages, output) : undefined;
 pages.sort((a,b) => a.identity.pageId.localeCompare(b.identity.pageId)); errors.sort((a,b) => a.sourcePath.localeCompare(b.sourcePath));
 const counts = pages.reduce<Record<string,number>>((acc,p) => { acc[p.identity.pageType]=(acc[p.identity.pageType]||0)+1; return acc; },{});
 const collectionPages = pages.filter((p): p is CollectionPage => p.identity.pageType === 'collection');
 const collectionCounts = collectionPages.reduce<Record<string, number>>((acc, p) => { const key = `${p.collection.kind}.${p.collection.completeness}`; acc[key] = (acc[key] || 0) + 1; return acc; }, {});
-await writeOutput(output,pages,errors,{ parserVersion:'0.7.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.7.0', pageCounts:counts, collectionCounts, collectionRecovery, pageCount:pages.length, errorCount:errors.length });
+await writeOutput(output,pages,errors,{ parserVersion:'0.9.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.9.0', pageCounts:counts, collectionCounts, collectionRecovery, ...(imageRecovery ? { imageRecovery } : {}), pageCount:pages.length, errorCount:errors.length });
 console.log(`Parsed ${pages.length} pages with ${errors.length} errors.`);

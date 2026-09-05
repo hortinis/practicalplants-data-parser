@@ -5,11 +5,16 @@ import { extractFullData } from '../src/parser/full-data.js';
 import { extractToxicity, extractUseNotes, extractUses } from '../src/parser/uses.js';
 import { extractReferences } from '../src/parser/references.js';
 import { parsePlant } from '../src/parser/plant.js';
+import { extractPrimaryImage } from '../src/parser/image.js';
 import { parseAlias, parseCollection, parseIndex, parseConcept } from '../src/parser/non-plant.js';
 import { valueStatus, normalizeSafe } from '../src/normalize/values.js';
 import { recoverEmptyUseCollections } from '../src/recovery/use-collections.js';
+import { downloadPrimaryImages } from '../src/recovery/images.js';
 import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/observed/${name}`, import.meta.url), 'utf8');
 
@@ -76,6 +81,101 @@ describe('observed Practical Plants structures', () => {
     const result = extractReferences($);
     expect(result[0].id).toBe('cite_note-PFAFimport-16-16');
     expect(result[0].urls).toEqual(['https://example.org/source']);
+  });
+});
+
+describe('primary image recovery', () => {
+  const semanticFacts = (filename: string) => `
+    <table class="smwfacttable"><tr>
+      <td class="smwpropname"><a title="Property:Has primary image">Has&nbsp;primary&nbsp;image</a></td>
+      <td class="smwprops">${filename} <span class="smwsearch"><a href="/wiki/Special:SearchByProperty/Has-20primary-20image/${filename}">+</a></span></td>
+    </tr></table>`;
+
+  it('recovers a semantic filename and broken file-page link when no image rendered', () => {
+    const $ = load(`
+      <div id="article-image"><a href="../../wiki/File:Aconitum_columbianum_6017.JPG/index.html">248px</a></div>
+      ${semanticFacts('Aconitum_columbianum_6017.JPG')}`);
+
+    expect(extractPrimaryImage($, 'wiki/Aconitum_columbianum/index.html')).toEqual({
+      filename: 'Aconitum_columbianum_6017.JPG',
+      sourceLink: '../../wiki/File:Aconitum_columbianum_6017.JPG/index.html',
+      semanticProperty: 'Has primary image',
+      brokenFile: true,
+      sourceLocation: {
+        page: 'wiki/Aconitum_columbianum/index.html',
+        section: 'Semantic facts',
+        field: 'Has primary image'
+      }
+    });
+  });
+
+  it('combines a rendered image with its semantic provenance', () => {
+    const $ = load(`
+      <div id="article-image"><a class="image" href="/wiki/File:Akebia_quinata.jpg"><img alt="Akebia quinata.jpg" src="/w/images/3/3c/Akebia_quinata.jpg"></a></div>
+      ${semanticFacts('Akebia quinata.jpg')}`);
+
+    expect(extractPrimaryImage($, 'wiki/Akebia_quinata/index.html')).toMatchObject({
+      filename: 'Akebia quinata.jpg',
+      altText: 'Akebia quinata.jpg',
+      sourceLink: '/wiki/File:Akebia_quinata.jpg',
+      semanticProperty: 'Has primary image',
+      brokenFile: false
+    });
+  });
+
+  it('keeps the rendered-image fallback when no semantic fact exists', () => {
+    const $ = load('<div id="article-image"><img alt="Fallback.jpg" src="/w/images/Fallback.jpg"></div>');
+    expect(extractPrimaryImage($, 'wiki/Fallback/index.html')).toEqual({
+      filename: 'Fallback.jpg',
+      altText: 'Fallback.jpg',
+      brokenFile: false
+    });
+  });
+});
+
+describe('optional primary image downloads', () => {
+  it('stores resolved Commons links and downloads found images without failing missing ones', async () => {
+    const source = { repository: 'test' };
+    const base = { source, references: [], links: [] };
+    const plant = (pageId: string, filename: string): PlantPage => ({
+      ...base,
+      identity: { pageId, title: pageId, pageType: 'plant', sourcePath: `wiki/${pageId}/index.html` },
+      plant: { commonNames: [], image: { filename, brokenFile: true } },
+      taxonomy: {}, fullData: {}, narrative: [], uses: [], useNotes: [], toxicity: []
+    });
+    const found = plant('Found', 'Found_image.jpg');
+    const missing = plant('Missing', 'Missing_image.jpg');
+    const pages = [found, missing];
+    const imageBytes = new Uint8Array([1, 2, 3, 4]);
+    const fetchMock = async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.startsWith('https://commons.wikimedia.org/w/api.php')) return new Response(JSON.stringify({
+        query: { pages: [
+          { pageid: 1, title: 'File:Found image.jpg', imageinfo: [{ url: 'https://upload.wikimedia.org/Found_image.jpg?utm_source=test', descriptionurl: 'https://commons.wikimedia.org/wiki/File:Found_image.jpg' }] },
+          { pageid: -1, title: 'File:Missing image.jpg', missing: true }
+        ] }
+      }), { headers: { 'content-type': 'application/json' } });
+      if (url === 'https://upload.wikimedia.org/Found_image.jpg') return new Response(imageBytes, { headers: { 'content-type': 'image/jpeg' } });
+      return new Response(null, { status: 404 });
+    };
+    const output = await mkdtemp(join(tmpdir(), 'practicalplants-images-'));
+
+    try {
+      expect(await downloadPrimaryImages(pages, output, fetchMock as typeof fetch)).toEqual({
+        requested: 2, resolved: 1, downloaded: 1, notFound: 1, failed: 0
+      });
+      expect(found.plant.image).toMatchObject({
+        externalRepository: 'Wikimedia Commons',
+        downloadUrl: 'https://upload.wikimedia.org/Found_image.jpg',
+        descriptionUrl: 'https://commons.wikimedia.org/wiki/File:Found_image.jpg',
+        localPath: 'images/Found_image.jpg',
+        downloadStatus: 'downloaded'
+      });
+      expect(missing.plant.image?.downloadStatus).toBe('not_found');
+      expect(new Uint8Array(await readFile(join(output, 'images', 'Found_image.jpg')))).toEqual(imageBytes);
+    } finally {
+      await rm(output, { recursive: true, force: true });
+    }
   });
 });
 

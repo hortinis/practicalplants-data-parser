@@ -4,7 +4,7 @@ Offline TypeScript/Node.js parser for the recovered Practical Plants archive.
 
 ## Scope
 
-This project recovers structured information from an already-cloned Practical Plants archive. It does **not** clone, download, enrich, canonicalize, or query external plant/taxonomy sources.
+This project recovers structured information from an already-cloned Practical Plants archive. By default it does **not** clone, download, enrich, canonicalize, or query external plant/taxonomy sources. The optional `--download-images` mode queries Wikimedia Commons only for image filenames already preserved by the archive.
 
 The source archive is immutable input. Run the parser with a local checkout:
 
@@ -14,10 +14,19 @@ npm run check
 npm run parse -- /path/to/practicalplants-archive.org-recovery --output ./output
 ```
 
+Image binaries remain opt-in because normal parsing is offline. To resolve preserved filenames against Wikimedia Commons, store the resolved links in each `plant.image` record, and download found files into `output/images/`, run:
+
+```bash
+npm run parse -- /path/to/practicalplants-archive.org-recovery --output ./output --download-images
+```
+
+For each resolved image, `plant.image.downloadUrl` stores the direct binary URL, `descriptionUrl` stores its Wikimedia Commons file-description page, and `localPath` points to the downloaded file. The manifest reports requested, resolved, downloaded, missing, and failed image counts. A failed image lookup or download does not abort recovery of the remaining archive.
+
 ## Output
 
 ```text
 output/
+  images/                 # only with --download-images
   pages/
     plant/
     alias/
@@ -78,6 +87,7 @@ A full recovered-archive run completed with 11,019 parsed pages and 0 parser err
 - Narrative and Full Data links use the same link parser, preserving wiki target identity and red-link information. Use records likewise retain their links.
 - Detailed edible, material, and medicinal prose is retained separately in plant `useNotes`, preserving its category, links, citation markers, and source location without duplicating category-level notes across individual use labels.
 - Empty generated use collections are reconstructed after the corpus is parsed by matching their page identity to plant parts, use labels, and linked use targets. Recovered lists are marked with `memberSource: "plant_uses_inverse"`; unmatched collections remain explicitly empty.
+- Primary-image filenames are recovered from Semantic MediaWiki's `Has primary image` facts when the archived page lacks an image element. Image records preserve the semantic property and source location, the archived file-page link when available, and whether the image was broken in the recovered rendering.
 
 The source archive contains generated MediaWiki list/index pages in addition to plant pages. For example, `Abutilon` has a `Plants with the common name Abutilon` collection and three plant entries, while `Abies` uses `Plants in the Abies genus`. These are both index structures. Descriptive pages without an actual collection remain eligible for `unknown`.
 

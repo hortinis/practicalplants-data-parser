@@ -3,6 +3,38 @@
   "$id": "https://example.invalid/practicalplants/plant.schema.json",
   "type": "object",
   "required": ["commonNames"],
-  "properties": { "scientificName": { "type": "string" }, "commonNames": { "type": "array", "items": { "type": "string" } }, "summary": { "type": "string" }, "image": { "type": "object" } },
+  "properties": {
+    "scientificName": { "type": "string" },
+    "commonNames": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": "string" },
+    "image": {
+      "type": "object",
+      "required": ["filename", "brokenFile"],
+      "properties": {
+        "filename": { "type": "string" },
+        "caption": { "type": "string" },
+        "altText": { "type": "string" },
+        "sourceLink": { "type": "string" },
+        "semanticProperty": { "const": "Has primary image" },
+        "brokenFile": { "type": "boolean" },
+        "externalRepository": { "const": "Wikimedia Commons" },
+        "downloadUrl": { "type": "string" },
+        "descriptionUrl": { "type": "string" },
+        "localPath": { "type": "string" },
+        "downloadStatus": { "enum": ["downloaded", "not_found", "failed"] },
+        "sourceLocation": {
+          "type": "object",
+          "required": ["page"],
+          "properties": {
+            "page": { "type": "string" },
+            "section": { "type": "string" },
+            "field": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
   "additionalProperties": false
 }
