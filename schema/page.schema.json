@@ -84,6 +84,9 @@
     "polyculture": {
       "$ref": "#/$defs/polyculture"
     },
+    "interaction": {
+      "$ref": "#/$defs/interaction"
+    },
     "documentation": {
       "$ref": "#/$defs/documentation"
     },
@@ -107,6 +110,10 @@
     {
       "if": { "properties": { "identity": { "properties": { "pageType": { "const": "polyculture" } } } } },
       "then": { "required": ["polyculture"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "pageType": { "const": "interaction" } } } } },
+      "then": { "required": ["interaction"] }
     },
     {
       "if": {
@@ -209,6 +216,7 @@
             "alias",
             "collection",
             "polyculture",
+            "interaction",
             "documentation",
             "concept",
             "index",
@@ -543,6 +551,42 @@
         "description": { "type": "string" },
         "members": { "type": "array", "items": { "$ref": "#/$defs/polycultureMember" } },
         "narrative": { "type": "array", "items": { "$ref": "#/$defs/narrative" } }
+      },
+      "additionalProperties": false
+    },
+    "interactionField": {
+      "type": "object",
+      "required": ["text", "links", "references", "sourceLocation"],
+      "properties": {
+        "text": { "type": "string" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "sourceLocation": { "$ref": "#/$defs/sourceLocation" }
+      },
+      "additionalProperties": false
+    },
+    "interactionMember": {
+      "type": "object",
+      "required": ["name", "links", "sourceLocation"],
+      "properties": {
+        "name": { "type": "string" },
+        "pageId": { "type": "string" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
+        "sourceLocation": { "$ref": "#/$defs/sourceLocation" }
+      },
+      "additionalProperties": false
+    },
+    "interaction": {
+      "type": "object",
+      "required": ["leftMember", "rightMember", "direction", "effect", "impact", "details"],
+      "properties": {
+        "description": { "type": "string" },
+        "leftMember": { "$ref": "#/$defs/interactionMember" },
+        "rightMember": { "$ref": "#/$defs/interactionMember" },
+        "direction": { "$ref": "#/$defs/interactionField" },
+        "effect": { "$ref": "#/$defs/interactionField" },
+        "impact": { "$ref": "#/$defs/interactionField" },
+        "details": { "$ref": "#/$defs/interactionField" }
       },
       "additionalProperties": false
     },

@@ -1,4 +1,4 @@
-export type PageType = 'plant' | 'alias' | 'collection' | 'concept' | 'polyculture' | 'index' | 'documentation' | 'unknown';
+export type PageType = 'plant' | 'alias' | 'collection' | 'concept' | 'polyculture' | 'interaction' | 'index' | 'documentation' | 'unknown';
 export type ValueStatus = 'known' | 'unknown' | 'none_listed' | 'empty';
 export type LinkType = 'internal' | 'external' | 'unknown';
 
@@ -20,7 +20,10 @@ export interface CollectionPage extends PPPageBase { identity: PPPageBase['ident
 export interface PolycultureMemberField { text: string; links: LinkRecord[]; }
 export interface PolycultureMember { plant: { name: string; pageId?: string; commonNames: string[]; links: LinkRecord[] }; ecosystemNiches: PolycultureMemberField; functions: PolycultureMemberField; uses: PolycultureMemberField; sourceLocation: SourceLocation; }
 export interface PolyculturePage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'polyculture' }; polyculture: { description?: string; members: PolycultureMember[]; narrative: NarrativeSection[] }; }
+export interface InteractionField { text: string; links: LinkRecord[]; references: string[]; sourceLocation: SourceLocation; }
+export interface InteractionMember { name: string; pageId?: string; links: LinkRecord[]; sourceLocation: SourceLocation; }
+export interface InteractionPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'interaction' }; interaction: { description?: string; leftMember: InteractionMember; rightMember: InteractionMember; direction: InteractionField; effect: InteractionField; impact: InteractionField; details: InteractionField }; }
 export interface DocumentationPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'documentation' }; documentation: { namespace?: string; headings: string[]; text?: string }; }
 export interface UnknownPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'unknown' }; unknown: { headings: string[]; text?: string }; }
-export type PPPage = PlantPage | AliasPage | CollectionPage | ConceptPage | PolyculturePage | IndexPage | DocumentationPage | UnknownPage;
+export type PPPage = PlantPage | AliasPage | CollectionPage | ConceptPage | PolyculturePage | InteractionPage | IndexPage | DocumentationPage | UnknownPage;
 export interface ParseError { sourcePath: string; error: string; severity: 'warning' | 'error'; }

@@ -33,6 +33,7 @@ output/
     collection/
     concept/
     polyculture/
+    interaction/
     index/
     documentation/
     unknown/
@@ -62,6 +63,7 @@ Important observed selectors include:
 - `.category-plant-item` on genus/index pages
 - `Plants inhabiting this ecosystem niche` on concept pages
 - `#Polyculture_members` and `.tbl > .row > .cell` on polyculture pages
+- `#Details`, `#Left_member`, `#Right_member`, `#Direction`, `#Effect`, and `#Impact` on interaction pages
 
 The parser still treats the full corpus as authoritative: additional structures discovered during a complete corpus run should become regression fixtures and may require schema evolution.
 
@@ -91,6 +93,7 @@ A full recovered-archive run completed with 11,019 parsed pages and 0 parser err
 - Empty generated use collections are reconstructed after the corpus is parsed by matching their page identity to plant parts, use labels, and linked use targets. Recovered lists are marked with `memberSource: "plant_uses_inverse"`; unmatched collections remain explicitly empty.
 - Primary-image filenames are recovered from Semantic MediaWiki's `Has primary image` facts when the archived page lacks an image element. Image records preserve the semantic property and source location, the archived file-page link when available, and whether the image was broken in the recovered rendering.
 - Namespaced polyculture pages are emitted under `polyculture/`. Each member retains its plant identity and common names plus the ecosystem-niche, function, and use cells with their links; prose is grouped into narrative sections with citation identifiers and source locations.
+- Namespaced interaction pages are emitted under `interaction/`. Their left and right members resolve to archived page IDs where possible, while direction, effect, impact, and details retain source text, links, citation identifiers, and field-level provenance.
 
 The source archive contains generated MediaWiki list/index pages in addition to plant pages. For example, `Abutilon` has a `Plants with the common name Abutilon` collection and three plant entries, while `Abies` uses `Plants in the Abies genus`. These are both index structures. Descriptive pages without an actual collection remain eligible for `unknown`.
 

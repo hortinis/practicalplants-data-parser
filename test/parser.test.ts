@@ -11,6 +11,7 @@ import { valueStatus, normalizeSafe } from '../src/normalize/values.js';
 import { recoverEmptyUseCollections } from '../src/recovery/use-collections.js';
 import { downloadPrimaryImages } from '../src/recovery/images.js';
 import { parsePolyculture } from '../src/parser/polyculture.js';
+import { parseInteraction } from '../src/parser/interaction.js';
 import { validatePage } from '../src/validate.js';
 import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
@@ -394,6 +395,42 @@ describe('corpus-derived link and index edge cases', () => {
       </div>`);
     const page = parsePolyculture($, 'Polyculture:Sunchoke_and_Hog_Peanut', 'wiki/Polyculture:Sunchoke_and_Hog_Peanut/index.html', 'test', undefined, new Set(['Helianthus_tuberosus']));
     expect(page.polyculture.narrative).toEqual([expect.objectContaining({ id: 'overview', title: 'Overview', paragraphs: ['Both species can handle each other because they occupy distinct layers.'] })]);
+  });
+
+  it('classifies and extracts structured interaction fields with member identities and provenance', () => {
+    const $ = load(`
+      <header id="page-header">
+        <h1 id="article-title">Interaction:Cucurbita-Zea mays-1</h1>
+        <div id="article-summary"><p>This page defines the data for an interaction between <a href="/wiki/Cucurbita">Cucurbita</a> and <a href="/wiki/Zea_mays">Zea mays</a>.</p></div>
+      </header>
+      <div id="mw-content-text">
+        <h2><span id="Details">Details</span></h2>
+        <p><a href="/wiki/Cucurbita">Vines</a> can be intercropped with <a href="/wiki/Zea_mays">maize</a>.<sup class="reference"><a href="#cite_note-1">[1]</a></sup></p>
+        <h4><span id="Left_member">Left member</span></h4><p>Cucurbita</p>
+        <h4><span id="Right_member">Right member</span></h4><p>Zea mays</p>
+        <h3><span id="Direction">Direction</span></h3><p>&lt;&gt;</p>
+        <h3><span id="Effect">Effect</span></h3><p>Spatial optimisation, Moisture retention</p>
+        <h4><span id="Impact">Impact</span></h4><p>Neutral</p>
+        <ol class="references"><li id="cite_note-1"><span class="reference-text">Interaction source</span></li></ol>
+      </div>`);
+    const pageIds = new Set(['Cucurbita', 'Zea_mays']);
+
+    expect(classifyPage($, 'wiki/Interaction:Cucurbita-Zea_mays-1/index.html', pageIds)).toBe('interaction');
+    const page = parseInteraction($, 'Interaction:Cucurbita-Zea_mays-1', 'wiki/Interaction:Cucurbita-Zea_mays-1/index.html', 'test', 'abc', pageIds);
+    expect(page.identity.pageType).toBe('interaction');
+    expect(page.interaction.leftMember).toMatchObject({ name: 'Cucurbita', pageId: 'Cucurbita', sourceLocation: { section: 'Left member' } });
+    expect(page.interaction.rightMember).toMatchObject({ name: 'Zea mays', pageId: 'Zea_mays', sourceLocation: { section: 'Right member' } });
+    expect(page.interaction.direction.text).toBe('<>');
+    expect(page.interaction.effect.text).toBe('Spatial optimisation, Moisture retention');
+    expect(page.interaction.impact.text).toBe('Neutral');
+    expect(page.interaction.details).toMatchObject({
+      text: 'Vines can be intercropped with maize.[1]',
+      references: ['1'],
+      sourceLocation: { page: 'wiki/Interaction:Cucurbita-Zea_mays-1/index.html', section: 'Details' }
+    });
+    expect(page.interaction.details.links.map(link => link.targetPageId)).toEqual(['Cucurbita', 'Zea_mays']);
+    expect(page.references).toEqual([expect.objectContaining({ id: 'cite_note-1', rawText: 'Interaction source' })]);
+    expect(() => validatePage(page)).not.toThrow();
   });
 
   it('preserves repeated Full Data fields instead of overwriting them', () => {
