@@ -4,6 +4,26 @@
   "type": "object",
   "required": ["commonNames"],
   "properties": {
+    "ecology": {
+      "type": "object",
+      "required": ["functions"],
+      "properties": {
+        "functions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "link", "sourceLocation"],
+            "properties": {
+              "name": { "type": "string" },
+              "link": { "$ref": "https://example.invalid/practicalplants/page.schema.json#/$defs/link" },
+              "sourceLocation": { "$ref": "https://example.invalid/practicalplants/page.schema.json#/$defs/sourceLocation" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "scientificName": { "type": "string" },
     "commonNames": { "type": "array", "items": { "type": "string" } },
     "summary": { "type": "string" },

@@ -9,6 +9,7 @@ import { extractReferences } from './references.js';
 import { extractToxicity, extractUseNotes, extractUses } from './uses.js';
 import { extractCategoryMemberships } from './categories.js';
 import { extractSemanticFacts } from './semantic-facts.js';
+import { extractEcologicalFunctions } from './ecology.js';
 
 export function parsePlant($: CheerioAPI, pageId: string, sourcePath: string, repository: string, commit: string | undefined, pageIds: Set<string>, semanticFacts: SemanticFact[] = extractSemanticFacts($, sourcePath, pageIds)): PlantPage {
   const title = cleanText($('#article-title').first().text()) || pageId;
@@ -18,5 +19,5 @@ export function parsePlant($: CheerioAPI, pageId: string, sourcePath: string, re
   const image = extractPrimaryImage($, sourcePath, semanticFacts);
   const taxonomy = { binomialName: scientificName, genus: cleanText($('#article-summary .genus').first().text()) || undefined, family: cleanText($('#article-summary .family').first().text()) || undefined };
   const references = extractReferences($);
-  return { identity: { pageId, title, pageType: 'plant', sourcePath }, source: { repository, commit }, plant: { scientificName, commonNames, summary, image }, taxonomy, fullData: extractFullData($, sourcePath, pageIds), narrative: extractNarrative($, sourcePath, pageIds), uses: extractUses($, sourcePath, pageIds), useNotes: extractUseNotes($, sourcePath, pageIds), toxicity: extractToxicity($, sourcePath), references, links: extractLinks($, sourcePath, pageIds), categories: extractCategoryMemberships($, sourcePath, pageIds), ...(semanticFacts.length ? { semanticFacts } : {}) };
+  return { identity: { pageId, title, pageType: 'plant', sourcePath }, source: { repository, commit }, plant: { scientificName, commonNames, summary, image }, taxonomy, fullData: extractFullData($, sourcePath, pageIds), narrative: extractNarrative($, sourcePath, pageIds), uses: extractUses($, sourcePath, pageIds), useNotes: extractUseNotes($, sourcePath, pageIds), toxicity: extractToxicity($, sourcePath), ecology: { functions: extractEcologicalFunctions($, sourcePath, pageIds) }, references, links: extractLinks($, sourcePath, pageIds), categories: extractCategoryMemberships($, sourcePath, pageIds), ...(semanticFacts.length ? { semanticFacts } : {}) };
 }

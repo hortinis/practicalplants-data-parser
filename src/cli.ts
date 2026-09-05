@@ -13,6 +13,7 @@ import { downloadPrimaryImages } from './recovery/images.js';
 import { recoverCategoryCollections } from './recovery/category-collections.js';
 import { extractSemanticFacts } from './parser/semantic-facts.js';
 import { extractSourceMetadata } from './parser/source-metadata.js';
+import { recoverFunctionCollections } from './recovery/function-collections.js';
 import type { CollectionPage, PPPage, ParseError } from './model/types.js';
 
 const args = process.argv.slice(2); const source = args[0]; const outIndex = args.indexOf('--output'); const output = outIndex >= 0 ? args[outIndex + 1] : './output'; const shouldDownloadImages = args.includes('--download-images');
@@ -31,6 +32,7 @@ for (const candidate of scan.pages) {
 }
 const collectionRecovery = recoverEmptyUseCollections(pages);
 const categoryRecovery = recoverCategoryCollections(pages);
+const functionRecovery = recoverFunctionCollections(pages);
 const imageRecovery = shouldDownloadImages ? await downloadPrimaryImages(pages, output) : undefined;
 pages.sort((a,b) => a.identity.pageId.localeCompare(b.identity.pageId)); errors.sort((a,b) => a.sourcePath.localeCompare(b.sourcePath));
 const counts = pages.reduce<Record<string,number>>((acc,p) => { acc[p.identity.pageType]=(acc[p.identity.pageType]||0)+1; return acc; },{});
@@ -42,5 +44,5 @@ const sourceMetadataCounts = pages.reduce<Record<string, number>>((acc, page) =>
   if (page.source.mediaWiki?.historicalAccessCount !== undefined) acc.historicalAccessCounts = (acc.historicalAccessCounts || 0) + 1;
   return acc;
 }, {});
-await writeOutput(output,pages,errors,{ parserVersion:'0.14.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.14.0', pageCounts:counts, collectionCounts, collectionRecovery, categoryRecovery, sourceMetadataCounts, ...(imageRecovery ? { imageRecovery } : {}), pageCount:pages.length, errorCount:errors.length });
+await writeOutput(output,pages,errors,{ parserVersion:'0.15.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.15.0', pageCounts:counts, collectionCounts, collectionRecovery, categoryRecovery, functionRecovery, sourceMetadataCounts, ...(imageRecovery ? { imageRecovery } : {}), pageCount:pages.length, errorCount:errors.length });
 console.log(`Parsed ${pages.length} pages with ${errors.length} errors.`);

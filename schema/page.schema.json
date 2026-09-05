@@ -594,7 +594,13 @@
         "description": { "type": "string" },
         "members": { "type": "array", "items": { "type": "string" } },
         "completeness": { "enum": ["populated", "empty"] },
-        "memberSource": { "enum": ["archive_page", "plant_uses_inverse", "category_membership_inverse"] },
+        "memberSource": { "enum": ["archive_page", "plant_uses_inverse", "category_membership_inverse", "plant_ecology_inverse", "derived_function_intersection"] },
+        "memberDerivation": {
+          "type": "object",
+          "required": ["operation", "functions"],
+          "properties": { "operation": { "const": "intersection" }, "functions": { "type": "array", "items": { "type": "string" }, "minItems": 2 } },
+          "additionalProperties": false
+        },
         "subcategories": { "type": "array", "items": { "type": "string", "pattern": "^Category:" } },
         "totalMembers": { "type": "integer", "minimum": 0 },
         "membersComplete": { "type": "boolean" }
