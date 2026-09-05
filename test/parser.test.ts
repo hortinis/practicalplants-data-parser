@@ -9,9 +9,11 @@ import { extractPrimaryImage } from '../src/parser/image.js';
 import { parseAlias, parseCollection, parseIndex, parseConcept } from '../src/parser/non-plant.js';
 import { valueStatus, normalizeSafe } from '../src/normalize/values.js';
 import { recoverEmptyUseCollections } from '../src/recovery/use-collections.js';
+import { recoverCategoryCollections } from '../src/recovery/category-collections.js';
 import { downloadPrimaryImages } from '../src/recovery/images.js';
 import { parsePolyculture } from '../src/parser/polyculture.js';
 import { parseInteraction } from '../src/parser/interaction.js';
+import { extractCategoryMemberships } from '../src/parser/categories.js';
 import { validatePage } from '../src/validate.js';
 import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
@@ -139,7 +141,7 @@ describe('primary image recovery', () => {
 describe('optional primary image downloads', () => {
   it('stores resolved Commons links and downloads found images without failing missing ones', async () => {
     const source = { repository: 'test' };
-    const base = { source, references: [], links: [] };
+    const base = { source, references: [], links: [], categories: [] };
     const plant = (pageId: string, filename: string): PlantPage => ({
       ...base,
       identity: { pageId, title: pageId, pageType: 'plant', sourcePath: `wiki/${pageId}/index.html` },
@@ -183,6 +185,44 @@ describe('optional primary image downloads', () => {
 });
 
 describe('non-plant observed structures', () => {
+  it('extracts normal and hidden category membership with link provenance', () => {
+    const $ = load(`<div id="catlinks" class="catlinks">
+      <div id="mw-normal-catlinks"><a href="/wiki/Special:Categories">Categories</a><ul>
+        <li><a href="../../wiki/Category:Plant_Species/index.html">Plant Species</a></li>
+        <li><a class="new" href="/w/index.php?title=Category:Solanum&amp;action=edit&amp;redlink=1">Solanum</a></li>
+      </ul></div>
+      <div id="mw-hidden-catlinks"><ul><li><a href="../../wiki/Category:Plant/index.html">Plant</a></li></ul></div>
+    </div>`);
+    expect(extractCategoryMemberships($, 'wiki/Solanum_lycopersicum/index.html', new Set(['Category:Plant_Species', 'Category:Plant']))).toEqual([
+      expect.objectContaining({ categoryPageId: 'Category:Plant_Species', name: 'Plant Species', hidden: false, link: expect.objectContaining({ resolved: true }), sourceLocation: { page: 'wiki/Solanum_lycopersicum/index.html', section: 'Categories', field: 'normal' } }),
+      expect.objectContaining({ categoryPageId: 'Category:Solanum', hidden: false, link: expect.objectContaining({ resolved: false, redLink: true }) }),
+      expect.objectContaining({ categoryPageId: 'Category:Plant', hidden: true, link: expect.objectContaining({ resolved: true }) })
+    ]);
+  });
+
+  it('classifies every Category namespace page as a category collection', () => {
+    const $ = load('<h1 id="article-title">Category:Empty</h1><div id="mw-content-text"></div>');
+    expect(classifyPage($, 'wiki/Category:Empty/index.html')).toBe('collection');
+  });
+
+  it('extracts category members, subcategories, and pagination completeness', () => {
+    const $ = load(`<h1 id="article-title">Category:Rosaceae</h1><div id="mw-content-text">
+      <div id="mw-subcategories"><h2>Subcategories</h2><ul><li><a href="/wiki/Category:Cydonia">Cydonia</a></li></ul></div>
+      <div id="mw-pages"><h2>Pages in category "Rosaceae"</h2><p>The following 2 pages are in this category, out of 708 total.</p><ul>
+        <li><a href="/wiki/Acaenia_anserinifolia">Acaenia anserinifolia</a></li>
+        <li><a href="/wiki/Agrimonia_eupatoria">Agrimonia eupatoria</a></li>
+      </ul></div></div>`);
+    const page = parseCollection($, 'Category:Rosaceae', 'wiki/Category:Rosaceae/index.html', 'test', undefined, new Set(['Category:Cydonia', 'Acaenia_anserinifolia', 'Agrimonia_eupatoria']), 'category');
+    expect(page.collection).toMatchObject({
+      kind: 'category',
+      members: ['Acaenia_anserinifolia', 'Agrimonia_eupatoria'],
+      subcategories: ['Category:Cydonia'],
+      totalMembers: 708,
+      membersComplete: false
+    });
+    expect(() => validatePage(page)).not.toThrow();
+  });
+
   it('classifies documentation namespaces', async () => {
     const { classifyPage } = await import('../src/classifier.js');
     const $ = load('<div id="article-title">Help</div><div id="mw-content-text"><h2>Contents</h2><p>Documentation</p></div>');
@@ -243,7 +283,7 @@ describe('non-plant observed structures', () => {
 
 describe('empty use collection recovery', () => {
   const source = { repository: 'test' };
-  const base = { source, references: [], links: [] };
+  const base = { source, references: [], links: [], categories: [] };
 
   function collection(pageId: string, title = pageId): CollectionPage {
     return { ...base, identity: { pageId, title, pageType: 'collection', sourcePath: `wiki/${pageId}/index.html` }, collection: { kind: 'use', members: [], completeness: 'empty', memberSource: 'archive_page' } };
@@ -281,6 +321,28 @@ describe('empty use collection recovery', () => {
     expect(recoverEmptyUseCollections(pages)).toEqual({ collectionsRecovered: 0, membershipsRecovered: 0 });
     expect(unmatched.collection).toMatchObject({ members: [], completeness: 'empty', memberSource: 'archive_page' });
     expect(populated.collection.members).toEqual(['Existing']);
+  });
+});
+
+describe('category collection recovery', () => {
+  const source = { repository: 'test' };
+  const base = { source, references: [], links: [], categories: [] };
+
+  it('reconstructs a complete category list from page memberships', () => {
+    const category: CollectionPage = {
+      ...base,
+      identity: { pageId: 'Category:Plant', title: 'Category:Plant', pageType: 'collection', sourcePath: 'wiki/Category:Plant/index.html' },
+      collection: { kind: 'category', members: ['Alpha'], completeness: 'populated', memberSource: 'archive_page', subcategories: [], totalMembers: 2, membersComplete: false }
+    };
+    const member = (pageId: string): PlantPage => ({
+      ...base,
+      identity: { pageId, title: pageId, pageType: 'plant', sourcePath: `wiki/${pageId}/index.html` },
+      categories: [{ categoryPageId: 'Category:Plant', name: 'Plant', hidden: true, link: { href: '/wiki/Category:Plant', label: 'Plant', targetPageId: 'Category:Plant', linkType: 'internal', resolved: true }, sourceLocation: { page: `wiki/${pageId}/index.html`, section: 'Categories', field: 'hidden' } }],
+      plant: { commonNames: [] }, taxonomy: {}, fullData: {}, narrative: [], uses: [], useNotes: [], toxicity: []
+    });
+
+    expect(recoverCategoryCollections([category, member('Alpha'), member('Beta')])).toEqual({ collectionsRecovered: 1, membershipsRecovered: 1, completeCollections: 1 });
+    expect(category.collection).toMatchObject({ members: ['Alpha', 'Beta'], memberSource: 'category_membership_inverse', membersComplete: true });
   });
 });
 

@@ -6,7 +6,8 @@
     "identity",
     "source",
     "references",
-    "links"
+    "links",
+    "categories"
   ],
   "properties": {
     "identity": {
@@ -25,6 +26,12 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/link"
+      }
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/categoryMembership"
       }
     },
     "plant": {
@@ -277,6 +284,18 @@
       },
       "additionalProperties": false
     },
+    "categoryMembership": {
+      "type": "object",
+      "required": ["categoryPageId", "name", "hidden", "link", "sourceLocation"],
+      "properties": {
+        "categoryPageId": { "type": "string", "pattern": "^Category:" },
+        "name": { "type": "string" },
+        "hidden": { "type": "boolean" },
+        "link": { "$ref": "#/$defs/link" },
+        "sourceLocation": { "$ref": "#/$defs/sourceLocation" }
+      },
+      "additionalProperties": false
+    },
     "fieldValue": {
       "type": "object",
       "required": [
@@ -509,7 +528,10 @@
         "description": { "type": "string" },
         "members": { "type": "array", "items": { "type": "string" } },
         "completeness": { "enum": ["populated", "empty"] },
-        "memberSource": { "enum": ["archive_page", "plant_uses_inverse"] }
+        "memberSource": { "enum": ["archive_page", "plant_uses_inverse", "category_membership_inverse"] },
+        "subcategories": { "type": "array", "items": { "type": "string", "pattern": "^Category:" } },
+        "totalMembers": { "type": "integer", "minimum": 0 },
+        "membersComplete": { "type": "boolean" }
       },
       "additionalProperties": false
     },

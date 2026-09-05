@@ -43,9 +43,9 @@ output/
 
 One JSON file is emitted per scanned page. Unknown pages are retained.
 
-Common-name alias pages are emitted under `alias/`. Family, usage (including plant-part and animal-forage lists), category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility. Collections include `completeness: "populated"` or `"empty"` so an empty generated list is not confused with a parser failure. Their `memberSource` distinguishes lists read from the archive page from empty use lists reconstructed through inverse relationships in plant `uses` records.
+Common-name alias pages are emitted under `alias/`. Family, usage (including plant-part and animal-forage lists), category and catalogue list pages are emitted under `collection/`; genus lists remain under `index/` for backward compatibility. Collections include `completeness: "populated"` or `"empty"` so an empty generated list is not confused with a parser failure. Their `memberSource` distinguishes lists read from the archive page from empty use lists reconstructed through inverse relationships in plant `uses` records. Category collections additionally preserve subcategories, the archive's reported total member count, and whether the archived page contains the complete member list.
 
-Help, template, category, concept, form, property, discussion, user and Practical Plants administration pages are emitted under `documentation/` for classification purposes.
+Every output page has a structured `categories` array extracted from MediaWiki's category-link area. Each membership records the category page ID, display name, whether the category is hidden, the original link (including resolution and red-link state), and its source location. Help, template, concept, form, property, discussion, user and Practical Plants administration pages are emitted under `documentation/` for classification purposes.
 
 ## Observed archive structures
 
@@ -64,6 +64,7 @@ Important observed selectors include:
 - `Plants inhabiting this ecosystem niche` on concept pages
 - `#Polyculture_members` and `.tbl > .row > .cell` on polyculture pages
 - `#Details`, `#Left_member`, `#Right_member`, `#Direction`, `#Effect`, and `#Impact` on interaction pages
+- `#mw-normal-catlinks`, `#mw-hidden-catlinks`, `#mw-pages`, and `#mw-subcategories` for category relationships
 
 The parser still treats the full corpus as authoritative: additional structures discovered during a complete corpus run should become regression fixtures and may require schema evolution.
 
@@ -94,6 +95,7 @@ A full recovered-archive run completed with 11,019 parsed pages and 0 parser err
 - Primary-image filenames are recovered from Semantic MediaWiki's `Has primary image` facts when the archived page lacks an image element. Image records preserve the semantic property and source location, the archived file-page link when available, and whether the image was broken in the recovered rendering.
 - Namespaced polyculture pages are emitted under `polyculture/`. Each member retains its plant identity and common names plus the ecosystem-niche, function, and use cells with their links; prose is grouped into narrative sections with citation identifiers and source locations.
 - Namespaced interaction pages are emitted under `interaction/`. Their left and right members resolve to archived page IDs where possible, while direction, effect, impact, and details retain source text, links, citation identifiers, and field-level provenance.
+- Category namespace pages are emitted as structured category collections with members, subcategories, reported totals, and an explicit completeness flag for paginated archive pages. All pages separately retain normal and hidden category memberships with link and source provenance.
 
 The source archive contains generated MediaWiki list/index pages in addition to plant pages. For example, `Abutilon` has a `Plants with the common name Abutilon` collection and three plant entries, while `Abies` uses `Plants in the Abies genus`. These are both index structures. Descriptive pages without an actual collection remain eligible for `unknown`.
 

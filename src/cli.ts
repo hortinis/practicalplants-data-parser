@@ -10,6 +10,7 @@ import { validatePage } from './validate.js';
 import { writeOutput } from './output.js';
 import { recoverEmptyUseCollections } from './recovery/use-collections.js';
 import { downloadPrimaryImages } from './recovery/images.js';
+import { recoverCategoryCollections } from './recovery/category-collections.js';
 import type { CollectionPage, PPPage, ParseError } from './model/types.js';
 
 const args = process.argv.slice(2); const source = args[0]; const outIndex = args.indexOf('--output'); const output = outIndex >= 0 ? args[outIndex + 1] : './output'; const shouldDownloadImages = args.includes('--download-images');
@@ -23,10 +24,11 @@ for (const candidate of scan.pages) {
   } catch (error) { errors.push({ sourcePath: candidate.sourcePath, error: error instanceof Error ? error.message : String(error), severity: 'error' }); }
 }
 const collectionRecovery = recoverEmptyUseCollections(pages);
+const categoryRecovery = recoverCategoryCollections(pages);
 const imageRecovery = shouldDownloadImages ? await downloadPrimaryImages(pages, output) : undefined;
 pages.sort((a,b) => a.identity.pageId.localeCompare(b.identity.pageId)); errors.sort((a,b) => a.sourcePath.localeCompare(b.sourcePath));
 const counts = pages.reduce<Record<string,number>>((acc,p) => { acc[p.identity.pageType]=(acc[p.identity.pageType]||0)+1; return acc; },{});
 const collectionPages = pages.filter((p): p is CollectionPage => p.identity.pageType === 'collection');
 const collectionCounts = collectionPages.reduce<Record<string, number>>((acc, p) => { const key = `${p.collection.kind}.${p.collection.completeness}`; acc[key] = (acc[key] || 0) + 1; return acc; }, {});
-await writeOutput(output,pages,errors,{ parserVersion:'0.11.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.11.0', pageCounts:counts, collectionCounts, collectionRecovery, ...(imageRecovery ? { imageRecovery } : {}), pageCount:pages.length, errorCount:errors.length });
+await writeOutput(output,pages,errors,{ parserVersion:'0.12.0', sourceRepository:'Practical Plants recovered archive', sourceCommit:scan.commit, schemaVersion:'0.12.0', pageCounts:counts, collectionCounts, collectionRecovery, categoryRecovery, ...(imageRecovery ? { imageRecovery } : {}), pageCount:pages.length, errorCount:errors.length });
 console.log(`Parsed ${pages.length} pages with ${errors.length} errors.`);

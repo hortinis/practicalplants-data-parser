@@ -3,6 +3,7 @@ import type { NarrativeSection, PolycultureMember, PolycultureMemberField, Polyc
 import { cleanText } from '../normalize/values.js';
 import { extractLinks } from './links.js';
 import { extractCitationIds, extractReferences } from './references.js';
+import { extractCategoryMemberships } from './categories.js';
 
 function memberField($: CheerioAPI, cell: Cheerio<any>, sourcePath: string, pageIds: Set<string>): PolycultureMemberField {
   return { text: cleanText(cell.text()), links: extractLinks($, sourcePath, pageIds, cell) };
@@ -104,6 +105,7 @@ export function parsePolyculture($: CheerioAPI, pageId: string, sourcePath: stri
     source: { repository, commit },
     references: extractReferences($),
     links: extractLinks($, sourcePath, pageIds),
+    categories: extractCategoryMemberships($, sourcePath, pageIds),
     polyculture: {
       description: cleanText($('#article-summary').first().text()) || undefined,
       members: extractMembers($, sourcePath, pageIds),

@@ -3,6 +3,7 @@ import type { InteractionField, InteractionMember, InteractionPage } from '../mo
 import { cleanText } from '../normalize/values.js';
 import { extractLinks } from './links.js';
 import { extractCitationIds, extractReferences } from './references.js';
+import { extractCategoryMemberships } from './categories.js';
 
 function sectionHeading($: CheerioAPI, id: string): Cheerio<any> {
   const byId = $(`#${id}`).first().closest('h1, h2, h3, h4, h5, h6');
@@ -46,6 +47,7 @@ export function parseInteraction($: CheerioAPI, pageId: string, sourcePath: stri
     source: { repository, commit },
     references: extractReferences($),
     links: extractLinks($, sourcePath, pageIds),
+    categories: extractCategoryMemberships($, sourcePath, pageIds),
     interaction: {
       description: cleanText($('#article-summary').first().text()) || undefined,
       leftMember: interactionMember($, 'Left_member', sourcePath, pageIds),
