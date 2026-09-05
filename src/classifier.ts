@@ -25,6 +25,7 @@ export function classifyPage($: CheerioAPI, sourcePath = '', pageIds: Set<string
 
   const title = cleanText($('#article-title').first().text());
   const pageId = sourcePath.replace(/^wiki\//i, '').replace(/\/index\.html$/i, '');
+  if (/^Polyculture:/i.test(pageId) && ($('#Polyculture_members').length || $('#mw-content-text h2, #mw-content-text h3').toArray().some(heading => /^Polyculture members$/i.test(cleanText($(heading).text()))))) return 'polyculture';
   if (/^(?:Help|Template|Category|Concept|Form|Property|Talk|User|MediaWiki|PracticalPlants):/i.test(pageId) || /^(?:Search|Wiki|Todos|Transitioning_PFAF)$/i.test(pageId)) return 'documentation';
   const headings = $('h2, h3').map((_, h) => cleanText($(h).text())).get();
   const categories = cleanText($('#catlinks').first().text()).toLowerCase();

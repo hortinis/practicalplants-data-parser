@@ -10,6 +10,8 @@ import { parseAlias, parseCollection, parseIndex, parseConcept } from '../src/pa
 import { valueStatus, normalizeSafe } from '../src/normalize/values.js';
 import { recoverEmptyUseCollections } from '../src/recovery/use-collections.js';
 import { downloadPrimaryImages } from '../src/recovery/images.js';
+import { parsePolyculture } from '../src/parser/polyculture.js';
+import { validatePage } from '../src/validate.js';
 import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -314,7 +316,7 @@ describe('corpus-derived link and index edge cases', () => {
     expect(page.links.find(link => link.targetPageId === 'Abutilon_megapotamicum')?.resolved).toBe(false);
   });
 
-  it('does not classify polyculture pages as plants because their summaries name plants', () => {
+  it('classifies namespaced polyculture pages without mistaking their summary plants for the page type', () => {
     const polyculture = load(`
       <header id="page-header" class="with-image">
         <h1 id="article-title">Polyculture:Three sisters</h1>
@@ -323,7 +325,7 @@ describe('corpus-derived link and index edge cases', () => {
         </div>
       </header>
       <div id="mw-content-text"><h2>Polyculture members</h2></div>`);
-    expect(classifyPage(polyculture, 'wiki/Polyculture:Three_sisters/index.html')).toBe('unknown');
+    expect(classifyPage(polyculture, 'wiki/Polyculture:Three_sisters/index.html')).toBe('polyculture');
 
     const legacyPath = load(`
       <header id="page-header" class="with-image">
@@ -334,6 +336,64 @@ describe('corpus-derived link and index edge cases', () => {
       </header>
       <div id="mw-content-text"><h2>Polyculture members</h2></div>`);
     expect(classifyPage(legacyPath, 'wiki/Sunchoke-hog_peanut/index.html')).toBe('unknown');
+  });
+
+  it('extracts polyculture member roles and narrative with links, citations, and provenance', () => {
+    const $ = load(`
+      <header id="page-header">
+        <h1 id="article-title">Polyculture:Three sisters</h1>
+        <div id="article-summary"><p>A <a href="/wiki/Polyculture">polyculture</a> comprising of <a href="/wiki/Zea_mays">Zea mays</a>.</p></div>
+      </header>
+      <div id="mw-content-text">
+        <h2><span class="mw-headline" id="Polyculture_members">Polyculture members</span></h2>
+        <div class="orange tbl">
+          <div class="row"><div class="heading">Species</div><div class="heading">Ecosystem Niche/Layer</div><div class="heading">Function(s)</div><div class="heading">Use(s)</div></div>
+          <span class="row">
+            <span class="cell"><a href="/wiki/Zea_mays"><span class="plant-name"><em class="binomial">Zea mays</em></span></a><span class="common-name"> (Maize, Sweet Corn)</span></span>
+            <span class="cell"><a href="/wiki/Herbaceous">Herbaceous</a></span>
+            <span class="cell"><a href="/wiki/Structure">Structure</a></span>
+            <span class="cell"><a class="new" href="/w/index.php?title=Edible_crop&amp;action=edit&amp;redlink=1">Edible crop</a></span>
+          </span>
+        </div>
+        <h2><span class="mw-headline" id="History_and_method">History and method</span></h2>
+        <p>The crops are <a href="/wiki/Intercropping">planted together</a>.<sup class="reference"><a href="#cite_note-wiki1-1">[1]</a></sup></p>
+        <div class="article-section" id="article-references"><h2>References</h2><ol class="references"><li id="cite_note-wiki1-1"><span class="reference-text">Example source</span></li></ol></div>
+      </div>`);
+    const pageIds = new Set(['Polyculture', 'Zea_mays', 'Herbaceous', 'Structure', 'Intercropping']);
+    const page = parsePolyculture($, 'Polyculture:Three_sisters', 'wiki/Polyculture:Three_sisters/index.html', 'test', 'abc', pageIds);
+
+    expect(page.identity.pageType).toBe('polyculture');
+    expect(page.polyculture.members).toHaveLength(1);
+    expect(page.polyculture.members[0]).toMatchObject({
+      plant: { name: 'Zea mays', pageId: 'Zea_mays', commonNames: ['Maize', 'Sweet Corn'] },
+      ecosystemNiches: { text: 'Herbaceous' },
+      functions: { text: 'Structure' },
+      uses: { text: 'Edible crop' },
+      sourceLocation: { page: 'wiki/Polyculture:Three_sisters/index.html', section: 'Polyculture members', field: 'row 1' }
+    });
+    expect(page.polyculture.members[0].uses.links[0]).toMatchObject({ targetPageId: 'Edible_crop', redLink: true, resolved: false });
+    expect(page.polyculture.narrative).toEqual([expect.objectContaining({
+      id: 'History_and_method',
+      title: 'History and method',
+      paragraphs: ['The crops are planted together.[1]'],
+      references: ['wiki1-1'],
+      links: [expect.objectContaining({ targetPageId: 'Intercropping', resolved: true })],
+      sourceLocation: { page: 'wiki/Polyculture:Three_sisters/index.html', section: 'History and method' }
+    })]);
+    expect(page.references).toEqual([expect.objectContaining({ id: 'cite_note-wiki1-1', rawText: 'Example source' })]);
+    expect(() => validatePage(page)).not.toThrow();
+  });
+
+  it('puts unheaded polyculture prose into an overview narrative section', () => {
+    const $ = load(`
+      <h1 id="article-title">Polyculture:Sunchoke and Hog Peanut</h1>
+      <div id="mw-content-text">
+        <h2><span id="Polyculture_members">Polyculture members</span></h2>
+        <div class="tbl"><span class="row"><span class="cell"><a href="/wiki/Helianthus_tuberosus"><span class="plant-name">Helianthus tuberosus</span></a></span><span class="cell">Canopy</span><span class="cell">Living trellis</span><span class="cell">Edible tubers</span></span></div>
+        <p>Both species can handle each other because they occupy distinct layers.</p>
+      </div>`);
+    const page = parsePolyculture($, 'Polyculture:Sunchoke_and_Hog_Peanut', 'wiki/Polyculture:Sunchoke_and_Hog_Peanut/index.html', 'test', undefined, new Set(['Helianthus_tuberosus']));
+    expect(page.polyculture.narrative).toEqual([expect.objectContaining({ id: 'overview', title: 'Overview', paragraphs: ['Both species can handle each other because they occupy distinct layers.'] })]);
   });
 
   it('preserves repeated Full Data fields instead of overwriting them', () => {

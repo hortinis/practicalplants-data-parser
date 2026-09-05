@@ -81,6 +81,9 @@
     "collection": {
       "$ref": "#/$defs/collection"
     },
+    "polyculture": {
+      "$ref": "#/$defs/polyculture"
+    },
     "documentation": {
       "$ref": "#/$defs/documentation"
     },
@@ -100,6 +103,10 @@
     {
       "if": { "properties": { "identity": { "properties": { "pageType": { "const": "collection" } } } } },
       "then": { "required": ["collection"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "pageType": { "const": "polyculture" } } } } },
+      "then": { "required": ["polyculture"] }
     },
     {
       "if": {
@@ -201,6 +208,7 @@
             "plant",
             "alias",
             "collection",
+            "polyculture",
             "documentation",
             "concept",
             "index",
@@ -494,6 +502,47 @@
         "members": { "type": "array", "items": { "type": "string" } },
         "completeness": { "enum": ["populated", "empty"] },
         "memberSource": { "enum": ["archive_page", "plant_uses_inverse"] }
+      },
+      "additionalProperties": false
+    },
+    "polycultureMemberField": {
+      "type": "object",
+      "required": ["text", "links"],
+      "properties": {
+        "text": { "type": "string" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+      },
+      "additionalProperties": false
+    },
+    "polycultureMember": {
+      "type": "object",
+      "required": ["plant", "ecosystemNiches", "functions", "uses", "sourceLocation"],
+      "properties": {
+        "plant": {
+          "type": "object",
+          "required": ["name", "commonNames", "links"],
+          "properties": {
+            "name": { "type": "string" },
+            "pageId": { "type": "string" },
+            "commonNames": { "type": "array", "items": { "type": "string" } },
+            "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+          },
+          "additionalProperties": false
+        },
+        "ecosystemNiches": { "$ref": "#/$defs/polycultureMemberField" },
+        "functions": { "$ref": "#/$defs/polycultureMemberField" },
+        "uses": { "$ref": "#/$defs/polycultureMemberField" },
+        "sourceLocation": { "$ref": "#/$defs/sourceLocation" }
+      },
+      "additionalProperties": false
+    },
+    "polyculture": {
+      "type": "object",
+      "required": ["members", "narrative"],
+      "properties": {
+        "description": { "type": "string" },
+        "members": { "type": "array", "items": { "$ref": "#/$defs/polycultureMember" } },
+        "narrative": { "type": "array", "items": { "$ref": "#/$defs/narrative" } }
       },
       "additionalProperties": false
     },
