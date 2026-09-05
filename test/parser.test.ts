@@ -14,6 +14,7 @@ import { downloadPrimaryImages } from '../src/recovery/images.js';
 import { parsePolyculture } from '../src/parser/polyculture.js';
 import { parseInteraction } from '../src/parser/interaction.js';
 import { extractCategoryMemberships } from '../src/parser/categories.js';
+import { extractSemanticFacts } from '../src/parser/semantic-facts.js';
 import { validatePage } from '../src/validate.js';
 import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
@@ -135,6 +136,27 @@ describe('primary image recovery', () => {
       altText: 'Fallback.jpg',
       brokenFile: false
     });
+  });
+});
+
+describe('semantic fact recovery', () => {
+  it('preserves ordinary, red-linked, repeated, and special fact rows', () => {
+    const $ = load(`<div class="smwfact"><table class="smwfacttable">
+      <tr><td class="smwpropname"><a href="/wiki/Property:Has_edible_use">Has edible use</a></td><td class="smwprops"><a href="/wiki/Gum">Gum</a> <span class="smwsearch"><a href="/wiki/Special:SearchByProperty/Has-20edible-20use/Gum">+</a></span> and <a class="new" href="/w/index.php?title=Unknown_use&amp;action=edit&amp;redlink=1">Unknown use</a> <span class="smwsearch"><a href="/wiki/Special:SearchByProperty/Has-20edible-20use/Unknown-20use">+</a></span></td></tr>
+      <tr><td class="smwpropname"><a href="/w/index.php?title=Property:Has_soil_teloamyture_preference&amp;action=edit&amp;redlink=1">Has soil teloamyture preference</a></td><td class="smwprops">Loamy <span class="smwsearch"><a href="/wiki/Special:SearchByProperty/Has-20soil-20teloamyture-20preference/Loamy">+</a></span></td></tr>
+      <tr><td class="smwspecname"><span class="smwbuiltin"><a href="/wiki/Property:Has_subobject">Has subobject</a></span></td><td class="smwspecs"><a href="/wiki/Plant#_abc">Plant</a> <span class="smwsearch"><a href="/wiki/Special:SearchByProperty/Has-20subobject/Plant-23_abc">+</a></span></td></tr>
+      <tr><td class="smwpropname"><a href="/wiki/Property:Has_edible_use">Has edible use</a></td><td class="smwprops">Tea <span class="smwsearch"><a href="/wiki/Special:SearchByProperty/Has-20edible-20use/Tea">+</a></span></td></tr>
+    </table></div>`);
+    const facts = extractSemanticFacts($, 'wiki/Plant/index.html', new Set(['Gum', 'Plant']));
+    expect(facts).toHaveLength(4);
+    expect(facts[0]).toMatchObject({ property: { name: 'Has edible use', kind: 'ordinary' }, rawText: 'Gum and Unknown use', values: [{ rawValue: 'Gum', links: [{ targetPageId: 'Gum', resolved: true }] }, { rawValue: 'Unknown use', links: [{ targetPageId: 'Unknown_use', redLink: true, resolved: false }] }] });
+    expect(facts[1].property.link).toMatchObject({ targetPageId: 'Property:Has_soil_teloamyture_preference', redLink: true });
+    expect(facts[2]).toMatchObject({ property: { kind: 'special' }, values: [{ rawValue: 'Plant', links: [{ href: '/wiki/Plant#_abc', targetPageId: 'Plant' }] }] });
+    expect(facts[3].values[0].rawValue).toBe('Tea');
+  });
+
+  it('returns no facts when the page has no semantic table', () => {
+    expect(extractSemanticFacts(load('<div id="article-title">Plain</div>'), 'wiki/Plain/index.html')).toEqual([]);
   });
 });
 

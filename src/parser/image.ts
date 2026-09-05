@@ -1,30 +1,18 @@
 import type { CheerioAPI } from 'cheerio';
-import type { ImageInfo } from '../model/types.js';
-import { cleanText } from '../normalize/values.js';
+import type { ImageInfo, SemanticFact } from '../model/types.js';
+import { extractSemanticFacts } from './semantic-facts.js';
 
 const PRIMARY_IMAGE_PROPERTY = 'Has primary image';
 
-function semanticPrimaryImageFilename($: CheerioAPI): string | undefined {
-  let filename: string | undefined;
-
-  $('.smwfacttable tr').each((_, row) => {
-    if (filename) return;
-    const cells = $(row).children('td');
-    if (cleanText(cells.first().text()) !== PRIMARY_IMAGE_PROPERTY) return;
-
-    const value = cells.eq(1).clone();
-    value.find('.smwsearch').remove();
-    filename = cleanText(value.text()) || undefined;
-  });
-
-  return filename;
+function semanticPrimaryImageFilename(facts: SemanticFact[] = []): string | undefined {
+  return facts.find(fact => fact.property.name === PRIMARY_IMAGE_PROPERTY)?.values[0]?.rawValue;
 }
 
-export function extractPrimaryImage($: CheerioAPI, sourcePath: string): ImageInfo | undefined {
+export function extractPrimaryImage($: CheerioAPI, sourcePath: string, semanticFacts: SemanticFact[] = extractSemanticFacts($, sourcePath)): ImageInfo | undefined {
   const imageContainer = $('#article-image').first();
   const imageEl = imageContainer.find('img').first();
   const imageLink = imageContainer.find('a[href]').first().attr('href');
-  const semanticFilename = semanticPrimaryImageFilename($);
+  const semanticFilename = semanticPrimaryImageFilename(semanticFacts);
   const renderedFilename = imageEl.attr('alt') || imageEl.attr('src')?.split('/').pop();
   const filename = semanticFilename || renderedFilename;
 

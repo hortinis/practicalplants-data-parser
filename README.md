@@ -47,6 +47,8 @@ Common-name alias pages are emitted under `alias/`. Family, usage (including pla
 
 Every output page has a structured `categories` array extracted from MediaWiki's category-link area. Each membership records the category page ID, display name, whether the category is hidden, the original link (including resolution and red-link state), and its source location. Help, template, concept, form, property, discussion, user and Practical Plants administration pages are emitted under `documentation/` for classification purposes.
 
+Pages with Semantic MediaWiki fact tables additionally expose an optional `semanticFacts` array. Facts preserve the original property name and link, ordinary or special row kind, raw value text, individual value boundaries, value links, semantic search URLs, and source location. These values remain untyped and are kept alongside visible fields for validation; they do not replace or override the parser's domain fields.
+
 ## Observed archive structures
 
 The initial extraction rules are based on inspection of representative recovered pages including `Solanum_lycopersicum`, `Acacia_aneura`, `Abies_amabilis`, `Abies_homolepis`, `Abies`, and `Canopy`.

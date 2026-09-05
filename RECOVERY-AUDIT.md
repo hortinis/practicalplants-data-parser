@@ -180,6 +180,18 @@ Examples include:
 
 **Recoverable data:** classification and preservation status; these pages generally do not justify richer domain modeling.
 
+## 13. Semantic fact raw text retains punctuation spacing artifacts
+
+**Priority:** Low
+
+The structured semantic values are separated correctly, but the aggregate `rawText` field can preserve source-rendering whitespace before punctuation. For example, a multi-value fact may be emitted as `Gum , Unknown use and Tea` instead of `Gum, Unknown use and Tea`.
+
+This is a presentation-level cleanup only. Individual `values[].rawValue`, links, search URLs, and source provenance must remain unchanged.
+
+**Recoverable data:** normalized aggregate fact text with punctuation spacing cleaned mechanically, while retaining the original value boundaries and raw source evidence.
+
+**Acceptance criteria:** punctuation spacing is normalized deterministically for commas, semicolons, colons, and periods where the source contains whitespace before the mark; no spaces inside values are changed; and regression coverage confirms that multi-value semantic facts retain the same individual values and links.
+
 ## Coverage observations
 
 - `output3` contains 11,019 page JSON files and reports zero parser errors.

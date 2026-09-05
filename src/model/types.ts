@@ -5,6 +5,8 @@ export type LinkType = 'internal' | 'external' | 'unknown';
 export interface SourceLocation { page: string; section?: string; field?: string; }
 export interface LinkRecord { href: string; label: string; targetPageId?: string; linkType: LinkType; resolved?: boolean; redLink?: boolean; }
 export interface CategoryMembership { categoryPageId: string; name: string; hidden: boolean; link: LinkRecord; sourceLocation: SourceLocation; }
+export interface SemanticValue { rawValue: string; links: LinkRecord[]; searchHref?: string; }
+export interface SemanticFact { property: { name: string; link?: LinkRecord; kind: 'ordinary' | 'special' }; rawText: string; values: SemanticValue[]; sourceLocation: SourceLocation; }
 export interface FieldValue { rawValue: string; normalizedValue?: unknown; status: ValueStatus; links: LinkRecord[]; sourceLocation?: SourceLocation; }
 export interface UseRecord { category: 'edible' | 'material' | 'medicinal'; plantPart?: string; use?: string; text?: string; links?: LinkRecord[]; references: string[]; sourceLocation?: SourceLocation; }
 export interface UseNoteRecord { category: 'edible' | 'material' | 'medicinal'; text: string; links: LinkRecord[]; references: string[]; sourceLocation: SourceLocation; }
@@ -12,7 +14,7 @@ export interface ToxicityRecord { plantParts: string[]; compound?: string; sever
 export interface NarrativeSection { id: string; title: string; paragraphs: string[]; lists: string[][]; links: LinkRecord[]; references: string[]; sourceLocation: SourceLocation; }
 export interface ReferenceRecord { id: string; rawText: string; author?: string; title?: string; publisher?: string; date?: string; isbn?: string; urls: string[]; }
 export interface ImageInfo { filename: string; caption?: string; altText?: string; sourceLink?: string; semanticProperty?: 'Has primary image'; brokenFile: boolean; sourceLocation?: SourceLocation; externalRepository?: 'Wikimedia Commons'; downloadUrl?: string; descriptionUrl?: string; localPath?: string; downloadStatus?: 'downloaded' | 'not_found' | 'failed'; }
-export interface PPPageBase { identity: { pageId: string; title: string; pageType: PageType; sourcePath: string }; source: { repository: string; commit?: string }; references: ReferenceRecord[]; links: LinkRecord[]; categories: CategoryMembership[]; }
+export interface PPPageBase { identity: { pageId: string; title: string; pageType: PageType; sourcePath: string }; source: { repository: string; commit?: string }; references: ReferenceRecord[]; links: LinkRecord[]; categories: CategoryMembership[]; semanticFacts?: SemanticFact[]; }
 export interface PlantPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'plant' }; plant: { scientificName?: string; commonNames: string[]; summary?: string; image?: ImageInfo }; taxonomy: { binomialName?: string; genus?: string; family?: string }; fullData: Record<string, Record<string, FieldValue[]>>; narrative: NarrativeSection[]; uses: UseRecord[]; useNotes: UseNoteRecord[]; toxicity: ToxicityRecord[]; }
 export interface ConceptPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'concept' }; concept: { description?: string; members: string[] }; }
 export interface IndexPage extends PPPageBase { identity: PPPageBase['identity'] & { pageType: 'index' }; index: { description?: string; members: string[] }; }

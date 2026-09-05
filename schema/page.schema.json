@@ -34,6 +34,12 @@
         "$ref": "#/$defs/categoryMembership"
       }
     },
+    "semanticFacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/semanticFact"
+      }
+    },
     "plant": {
       "$ref": "plant.schema.json"
     },
@@ -292,6 +298,36 @@
         "name": { "type": "string" },
         "hidden": { "type": "boolean" },
         "link": { "$ref": "#/$defs/link" },
+        "sourceLocation": { "$ref": "#/$defs/sourceLocation" }
+      },
+      "additionalProperties": false
+    },
+    "semanticValue": {
+      "type": "object",
+      "required": ["rawValue", "links"],
+      "properties": {
+        "rawValue": { "type": "string" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
+        "searchHref": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "semanticFact": {
+      "type": "object",
+      "required": ["property", "rawText", "values", "sourceLocation"],
+      "properties": {
+        "property": {
+          "type": "object",
+          "required": ["name", "kind"],
+          "properties": {
+            "name": { "type": "string" },
+            "link": { "$ref": "#/$defs/link" },
+            "kind": { "enum": ["ordinary", "special"] }
+          },
+          "additionalProperties": false
+        },
+        "rawText": { "type": "string" },
+        "values": { "type": "array", "items": { "$ref": "#/$defs/semanticValue" } },
         "sourceLocation": { "$ref": "#/$defs/sourceLocation" }
       },
       "additionalProperties": false
