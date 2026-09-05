@@ -253,6 +253,9 @@
         },
         "commit": {
           "type": "string"
+        },
+        "mediaWiki": {
+          "$ref": "#/$defs/mediaWikiSource"
         }
       },
       "additionalProperties": false
@@ -287,6 +290,33 @@
         "redLink": {
           "type": "boolean"
         }
+      },
+      "additionalProperties": false
+    },
+    "revision": {
+      "type": "object",
+      "required": ["id", "url"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "lastModified": {
+      "type": "object",
+      "required": ["rawValue", "localDateTime"],
+      "properties": {
+        "rawValue": { "type": "string" },
+        "localDateTime": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$" }
+      },
+      "additionalProperties": false
+    },
+    "mediaWikiSource": {
+      "type": "object",
+      "properties": {
+        "revision": { "$ref": "#/$defs/revision" },
+        "lastModified": { "$ref": "#/$defs/lastModified" },
+        "historicalAccessCount": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
     },

@@ -15,6 +15,7 @@ import { parsePolyculture } from '../src/parser/polyculture.js';
 import { parseInteraction } from '../src/parser/interaction.js';
 import { extractCategoryMemberships } from '../src/parser/categories.js';
 import { extractSemanticFacts } from '../src/parser/semantic-facts.js';
+import { extractSourceMetadata } from '../src/parser/source-metadata.js';
 import { validatePage } from '../src/validate.js';
 import type { CollectionPage, PlantPage } from '../src/model/types.js';
 import { readFileSync } from 'node:fs';
@@ -34,6 +35,28 @@ describe('classification', () => {
 describe('values', () => {
   it('preserves missing states', () => { expect(valueStatus('?')).toBe('unknown'); expect(valueStatus('None listed.')).toBe('none_listed'); expect(valueStatus('')).toBe('empty'); });
   it('normalizes complete mature size only', () => { expect(normalizeSafe('30 x 5 meters')).toEqual({ value1: 30, value2: 5, unit: 'meters' }); expect(normalizeSafe('15 x')).toBeUndefined(); });
+});
+
+describe('MediaWiki source metadata', () => {
+  it('extracts revision, raw and normalized modification time, and access count', () => {
+    const $ = load(`<div class="printfooter"><a href="http://practicalplants.org/w/index.php?title=Alias&amp;oldid=82030">revision</a></div>
+      <div id="mw-footer-info"><ul><li>This page was last modified on 2 August 2013, at 15:56.</li><li>This page has been accessed 4,417 times.</li></ul></div>`);
+    expect(extractSourceMetadata($)).toEqual({
+      revision: { id: 82030, url: 'http://practicalplants.org/w/index.php?title=Alias&oldid=82030' },
+      lastModified: { rawValue: '2 August 2013, at 15:56', localDateTime: '2013-08-02T15:56:00' },
+      historicalAccessCount: 4417
+    });
+  });
+
+  it('keeps partial metadata and does not infer missing values', () => {
+    const $ = load(`<div class="printfooter"><a href="/wiki/Plain">page</a></div><div id="mw-footer-info"><ul><li>This page was last modified on 12 July 2012, at 14:13.</li></ul></div>`);
+    expect(extractSourceMetadata($)).toEqual({ lastModified: { rawValue: '12 July 2012, at 14:13', localDateTime: '2012-07-12T14:13:00' } });
+  });
+
+  it('allows revision titles to differ from the scanned route', () => {
+    const $ = load(`<div class="printfooter"><a href="https://practicalplants.org/w/index.php?title=Polyculture%3ASunchoke_and_Hog_Peanut&amp;oldid=64117">revision</a></div>`);
+    expect(extractSourceMetadata($).revision).toEqual({ id: 64117, url: 'https://practicalplants.org/w/index.php?title=Polyculture%3ASunchoke_and_Hog_Peanut&oldid=64117' });
+  });
 });
 
 describe('observed Practical Plants structures', () => {

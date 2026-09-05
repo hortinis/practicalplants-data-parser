@@ -49,6 +49,10 @@ Every output page has a structured `categories` array extracted from MediaWiki's
 
 Pages with Semantic MediaWiki fact tables additionally expose an optional `semanticFacts` array. Facts preserve the original property name and link, ordinary or special row kind, raw value text, individual value boundaries, value links, semantic search URLs, and source location. These values remain untyped and are kept alongside visible fields for validation; they do not replace or override the parser's domain fields.
 
+Each page's `source` may also contain optional `mediaWiki` provenance extracted from the archived print footer: the observed revision URL and `oldid`, the raw and normalized last-modified value, and the historical access count when present. The normalized date is deliberately timezone-free because the archive does not state a timezone; duplicate revision IDs and revision titles that differ from the scanned route are preserved as source evidence.
+
+The manifest reports `sourceMetadataCounts` for recovered revisions, last-modified values, and historical access counts.
+
 ## Observed archive structures
 
 The initial extraction rules are based on inspection of representative recovered pages including `Solanum_lycopersicum`, `Acacia_aneura`, `Abies_amabilis`, `Abies_homolepis`, `Abies`, and `Canopy`.
@@ -114,6 +118,5 @@ The six representative pages are enough to replace the initial selector assumpti
 - image markup
 - page classification edge cases
 - internal URL variants
-- old revision metadata
 
 Do not use this parser as a canonical botanical model or as an enriched taxonomy database.
